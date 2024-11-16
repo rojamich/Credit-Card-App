@@ -2,11 +2,18 @@
   "name": "credit-card-app",
   "version": "1.0.0",
   "description": "",
-  "main": "indexScript.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.1",
+    "express-handlebars": "^8.0.1",
+    "handlebars": "^4.7.8",
+    "nodemon": "^3.1.7"
+  }
 }

@@ -24,9 +24,18 @@ Routes
 ----------------------------------------------------------------*/
 
 app.get('/', function (req, res, next) {
-    res.status(200).render('homePage')
+    res.status(200).render('homePage', {
+        styles: ['<link rel="stylesheet" href="/styles/mainStyle.css">']
+    })
   }) 
 
-app.listen(port, function () {
-    console.log("== Server listening on port", port)
+app.get('*', function (req, res, next) {
+    res.status(404).render('404', {
+        styles: ['<link rel="stylesheet" href="/styles/mainStyle.css">'],
+        page: req.url
+    })
 })
+
+const server = app.listen(port, () => {
+    console.log(`Card Optimizer listening on port ${port}!`);
+});
