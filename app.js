@@ -24,16 +24,11 @@ Routes
 ----------------------------------------------------------------*/
 
 app.get('/', function (req, res, next) {
-    res.status(200).render('homePage', {
-        styles: ['<link rel="stylesheet" href="/styles/mainStyle.css">']
-    })
+    res.status(200).render('wallet')
   }) 
 
 app.get('*', function (req, res, next) {
-    res.status(404).render('404', {
-        styles: ['<link rel="stylesheet" href="/styles/mainStyle.css">'],
-        page: req.url
-    })
+    res.status(404).render('404', {page: req.url})
 })
 
 const server = app.listen(port, () => {
