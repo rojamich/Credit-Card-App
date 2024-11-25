@@ -114,20 +114,30 @@ function showBestCard(bonus, cardData, bankData) {
                 <p>Bonus: ${card.originalBonus.toFixed(1)}x on ${bonus}</p>
                 <p>Valued at ${card.weightedBonus.toFixed(2)} ${card.bankType}</p>
                 <div class="popup-buttons">
+                    <button id="prev-card-button">Previous Card</button>
                     <button id="next-card-button">Next Best Card</button>
                     <button id="close-popup-button">Close</button>
                 </div>
             </div>
         `;
 
+        // Attach event listeners for the buttons
         setTimeout(() => {
+            const prevButton = document.getElementById('prev-card-button');
             const nextButton = document.getElementById('next-card-button');
             const closeButton = document.getElementById('close-popup-button');
+
+            if (prevButton) {
+                prevButton.addEventListener('click', () => {
+                    currentIndex = (currentIndex - 1 + relevantCards.length) % relevantCards.length;
+                    updatePopupContent(); // Update popup with the previous card
+                });
+            }
 
             if (nextButton) {
                 nextButton.addEventListener('click', () => {
                     currentIndex = (currentIndex + 1) % relevantCards.length;
-                    updatePopupContent();
+                    updatePopupContent(); // Update popup with the next card
                 });
             }
 
