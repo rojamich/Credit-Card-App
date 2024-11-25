@@ -24,7 +24,7 @@ Routes
 
 // Serve wallet page for root
 app.get("/", (req, res) => {
-    res.status(200).sendFile(path.join(__dirname, "static/pages/wallet.html"));
+    res.status(200).sendFile(path.join(__dirname, "/index.html"));
 });
 
 // Serve a dummy favicon to avoid 404
@@ -34,7 +34,7 @@ app.get("/favicon.ico", (req, res) => {
 
 // Catch-all route for undefined paths
 app.get("*", (req, res) => {
-    res.status(404).sendFile(path.join(__dirname, "static/pages/404.html"));
+    res.status(404).sendFile(path.join(__dirname, "404.html"));
 });
 
 // Start the server
