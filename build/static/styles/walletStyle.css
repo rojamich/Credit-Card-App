@@ -1,0 +1,105 @@
+/* Center the container on the page */
+.bonus-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+/* Style for each bonus box */
+.bonus-box {
+    background-color: #f4f4f4;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    width: 150px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.bonus-box:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Bonus logo styling */
+.bonus-logo {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 10px;
+    border-radius: 50%; /* Optional: circular logos */
+}
+
+/* Bonus name styling */
+.bonus-name {
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+/* Remove button styling */
+.bonus-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+/* Popup container */
+.popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 400px;
+    z-index: 1000;
+}
+
+/* Popup content */
+.popup-content {
+    padding: 20px;
+    text-align: center;
+}
+
+.popup-card-image {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+}
+
+/* Popup buttons */
+.popup-buttons {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-around;
+}
+
+.popup-buttons button {
+    padding: 10px 15px;
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    transition: background-color 0.3s;
+}
+
+.popup-buttons button:hover {
+    background-color: #0056b3;
+}

@@ -1,0 +1,36 @@
+/*---------------------------------------
+    Header
+---------------------------------------*/
+header {
+    text-align: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  /* title */
+  header h1 {
+    font-size: 24px;
+    color: black;
+    margin-bottom: 10px;
+  }
+  
+  /* nav bar */
+  nav ul {
+    list-style-type: none;
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+    background-color: darkblue;
+  }
+  
+  /* items */
+  nav ul li {
+    margin: 0 15px;
+  }
+
+.header-btn {
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+}
+  

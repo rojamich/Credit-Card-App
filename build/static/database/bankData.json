@@ -1,0 +1,27 @@
+[
+    {
+        "name": "Cash",
+        "type": "cash",
+        "value": 1
+    },
+    {
+        "name": "American Express",
+        "type": "AMEX points",
+        "value": 2
+    },
+    {
+        "name": "Chase",
+        "type": "UR points",
+        "value": 2.05
+    },
+    {
+        "name": "Capital One",
+        "type": "C1 points",
+        "value": 1.85
+    },
+    {
+        "name": "Bilt",
+        "type": "Bilt Rewards",
+        "value": 2.05
+    }
+]
