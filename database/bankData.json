@@ -23,5 +23,10 @@
         "name": "Bilt",
         "type": "Bilt Rewards",
         "value": 2.05
+    },
+    {
+        "name": "Hyatt",
+        "type": "Hyatt points",
+        "value": 2
     }
 ]
