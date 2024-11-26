@@ -3,8 +3,8 @@ async function fetchAndRenderBonuses() {
     try {
         // Fetch the card and bank data
         const [cardResponse, bankResponse] = await Promise.all([
-            fetch('/database/cardsData.json'),
-            fetch('/database/bankData.json'),
+            fetch('./database/cardsData.json'),
+            fetch('./database/bankData.json'),
         ]);
 
         if (!cardResponse.ok || !bankResponse.ok)
@@ -60,10 +60,10 @@ function renderBonuses(bonuses, cardData, bankData) {
 
         const logo = document.createElement('img');
         logo.className = 'bonus-logo';
-        logo.src = `/logo/cardBonusesIcons/${bonus}-icon.png`;
+        logo.src = `./logo/cardBonusesIcons/${bonus}-icon.png`;
         logo.alt = `${bonus} Icon`;
         logo.onerror = () => {
-            logo.src = '/logo/cardBonusesIcons/default-icon.png';
+            logo.src = './logo/cardBonusesIcons/default-icon.png';
         };
 
         const name = document.createElement('span');

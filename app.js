@@ -3,6 +3,7 @@ const fs = require("fs");
 const express = require("express");
 const path = require("path"); // For resolving file paths
 const app = express();
+app.use(express.json());
 const port = process.env.PORT || 3000;
 
 // Middleware to log incoming requests
@@ -13,10 +14,6 @@ app.use((req, res, next) => {
     console.log("----------------------------------------------------");
     next();
 });
-
-// Serve static files from the "static" directory
-app.use(express.static("static"));
-app.use(express.json());
 
 /*----------------------------------------------------------------
 Routes
