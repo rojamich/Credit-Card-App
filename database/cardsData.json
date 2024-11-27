@@ -82,7 +82,7 @@
       "card": "Hyatt",
       "bank": "Hyatt",
       "bonuses": {
-        "default": 1,
+        "default": 2,
         "hyatt": 5,
         "airfare": 2,
         "restaurants": 2,
@@ -91,5 +91,18 @@
         "gym": 2
       },
       "photoPath": "https://static2.chasecdn.com/content/services/rendition/image.large.png/unified-assets/digital-cards/hyatt/41473467012.png"
+    },
+    {
+      "card": "Amazon Prime",
+      "bank": "cash",
+      "bonuses": {
+        "default": 1,
+        "amazon": 5,
+        "whole_foods": 5,
+        "restaurants": 2,
+        "fuel": 2,
+        "rideshare": 2
+      },
+      "photoPath": "https://static2.chasecdn.com/content/services/rendition/image.large.png/unified-assets/digital-cards/amazon-prime/41473477008.png"
     }
   ]
