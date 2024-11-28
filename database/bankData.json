@@ -7,26 +7,31 @@
     {
         "name": "American Express",
         "type": "AMEX points",
-        "value": 2
+        "value": 1.5
     },
     {
         "name": "Chase",
         "type": "UR points",
-        "value": 2.05
+        "value": 1.75
     },
     {
         "name": "Capital One",
         "type": "C1 points",
-        "value": 1.85
+        "value": 1.5
     },
     {
         "name": "Bilt",
         "type": "Bilt Rewards",
-        "value": 2.05
+        "value": 1.5
     },
     {
         "name": "Hyatt",
         "type": "Hyatt points",
-        "value": 2
+        "value": 1.7
+    },
+    {
+        "name": "Alaska",
+        "type": "Alaska Miles",
+        "value": 1.3
     }
 ]

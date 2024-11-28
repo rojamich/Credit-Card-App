@@ -104,5 +104,17 @@
         "rideshare": 2
       },
       "photoPath": "https://static2.chasecdn.com/content/services/rendition/image.large.png/unified-assets/digital-cards/amazon-prime/41473477008.png"
+    },
+    {
+      "card": "Alaska Card",
+      "bank": "Alaska",
+      "bonuses": {
+        "default": 1,
+        "alaska": 3,
+        "fuel": 2,
+        "EVcharging": 2,
+        "rideshare": 2
+      },
+      "photoPath": "https://www.bankofamerica.com/content/images/ContextualSiteGraphics/CreditCardArt/en_US/Approved_PCM/1bbt_sigcm_v_mileageplan_250x158.png"
     }
   ]
