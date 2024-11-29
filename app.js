@@ -1,7 +1,7 @@
 // Setup
 const fs = require("fs");
 const express = require("express");
-const path = require("path"); // For resolving file paths
+const path = require("path");
 const app = express();
 app.use(express.json());
 const port = process.env.PORT || 3000;
