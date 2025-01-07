@@ -14,6 +14,9 @@
       "bank": "Chase",
       "bonuses": {
         "default": 1,
+        "groceries": 5,
+        "gym": 5,
+        "Hair, Nails & Spa Services": 5,
         "lyft": 5
       },
       "photoPath": "https://www.uscreditcardguide.com/wp-content/uploads/freedom_card-2.png"
