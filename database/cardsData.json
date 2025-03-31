@@ -5,7 +5,7 @@
       "bonuses": {
         "default": 1.5,
         "restaurants": 3,
-        "lyft": 5
+        "drugstore": 3
       },
       "photoPath": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTbI-75P48iiYxqMsNsdyKTdDtPScOx--Up2Ssk3gx53YziCImM1kOclH6bIiRofEMjen0&usqp=CAU"
     },
@@ -14,10 +14,7 @@
       "bank": "Chase",
       "bonuses": {
         "default": 1,
-        "groceries": 5,
-        "gym": 5,
-        "Hair, Nails & Spa Services": 5,
-        "lyft": 5
+        "lyft": 2
       },
       "photoPath": "https://www.uscreditcardguide.com/wp-content/uploads/freedom_card-2.png"
     },
@@ -80,14 +77,14 @@
         "restaurants": 3,
         "travel": 2
       },
-      "photoPath": "https://creditcards.wellsfargo.com/W-Card-MarketPlace/v12-10-24/images/Products/Bilt/Bilt_card_D.png"
+      "photoPath": "https://creditcards.wellsfargo.com/W-Card-MarketPlace/v3-4-25/images/Products/Bilt/Bilt_card_D.png"
     },
     {
       "card": "Hyatt",
       "bank": "Hyatt",
       "bonuses": {
         "default": 1,
-        "hyatt": 5,
+        "hyatt": 4,
         "airfare": 2,
         "restaurants": 2,
         "lyft": 2,
@@ -103,10 +100,9 @@
         "default": 1,
         "amazon": 5,
         "whole_foods": 5,
-        "restaurants": 5,
-        "fuel": 5,
-        "rideshare": 2,
-        "groceries": 5
+        "restaurants": 2,
+        "fuel": 2,
+        "rideshare": 2
       },
       "photoPath": "https://static2.chasecdn.com/content/services/rendition/image.large.png/unified-assets/digital-cards/amazon-prime/41473477008.png"
     },
