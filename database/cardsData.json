@@ -20,7 +20,7 @@
     },
     {
       "card": "Blue Cash Everyday",
-      "bank": "cash",
+      "bank": "Cash",
       "bonuses": {
         "default": 1,
         "groceries": 3,
@@ -40,7 +40,7 @@
     },
     {
       "card": "Ducks Unlimited",
-      "bank": "cash",
+      "bank": "Cash",
       "bonuses": {
         "default": 1,
         "sporting_goods": 5,
@@ -78,7 +78,7 @@
         "restaurants": 3,
         "travel": 2
       },
-      "photoPath": "https://creditcards.wellsfargo.com/W-Card-MarketPlace/v3-4-25/images/Products/Bilt/Bilt_card_D.png"
+      "photoPath": "https://creditcards.wellsfargo.com/W-Card-MarketPlace/v7-9-25/images/Products/Bilt/Bilt_card_D.png"
     },
     {
       "card": "Hyatt",
@@ -96,7 +96,7 @@
     },
     {
       "card": "Amazon Prime",
-      "bank": "cash",
+      "bank": "Cash",
       "bonuses": {
         "default": 1,
         "amazon": 5,
@@ -126,5 +126,16 @@
         "default": 2
       },
       "photoPath": "https://www.aexp-static.com/online/myca/shared/summary/cardasset/images/NUS000000218_480x304_STRAIGHT_96.jpg"
+    },
+    {
+      "card": "Golden1 Cash Rewards+",
+      "bank": "Cash",
+      "bonuses": {
+        "default": 1,
+        "EVcharging": 4,
+        "restaurants": 3,
+        "groceries": 3
+      },
+      "photoPath": "https://www.golden1.com/-/media/golden1/credit-card-comparison-images/card-images/ccard-cash-plus-600x378.png?rev=d7e03cbb5e3741fdae4b39b018bc559b&extension=webp&hash=16E6D26B054BB8C996549F63FBEF58E7"
     }
   ]
