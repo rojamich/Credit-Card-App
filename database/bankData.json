@@ -33,5 +33,10 @@
         "name": "Alaska",
         "type": "Alaska Miles",
         "value": 1.45
+    },
+    {
+        "name": "Hilton",
+        "type": "Hilton Points",
+        "value": 0.6
     }
 ]

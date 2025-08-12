@@ -137,5 +137,16 @@
         "groceries": 3
       },
       "photoPath": "https://www.golden1.com/-/media/golden1/credit-card-comparison-images/card-images/ccard-cash-plus-600x378.png?rev=d7e03cbb5e3741fdae4b39b018bc559b&extension=webp&hash=16E6D26B054BB8C996549F63FBEF58E7"
+    },
+    {
+      "card": "Hilton Honors Aspire Card",
+      "bank": "Hilton",
+      "bonuses": {
+        "default": 3,
+        "airfare": 7,
+        "restaurants": 7,
+        "hilton hotels": 14
+      },
+      "photoPath": "https://icm.aexp-static.com/acquisition/card-art/NUS000000329_480x304_straight_withname.png"
     }
   ]
