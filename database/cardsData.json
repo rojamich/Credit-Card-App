@@ -111,11 +111,11 @@
       "card": "Alaska Card",
       "bank": "Alaska",
       "bonuses": {
-        "default": 1,
-        "alaska": 3,
-        "fuel": 2,
-        "EVcharging": 2,
-        "rideshare": 2
+        "default": 2,
+        "alaska": 6,
+        "fuel": 4,
+        "EVcharging": 4,
+        "rideshare": 4
       },
       "photoPath": "https://www.bankofamerica.com/content/images/ContextualSiteGraphics/CreditCardArt/en_US/Approved_PCM/1bbt_sigcm_v_mileageplan_250x158.png"
     },
