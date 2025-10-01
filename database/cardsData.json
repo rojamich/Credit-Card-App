@@ -15,10 +15,9 @@
       "bonuses": {
         "default": 1,
         "lyft": 2,
-        "fuel": 5,
-        "EVcharging": 5,
-        "Instacart": 5,
-        "live_entertainment": 5
+        "department stores": 5,
+        "Paypal": 5,
+        "Chase Travel": 5
       },
       "photoPath": "https://www.uscreditcardguide.com/wp-content/uploads/freedom_card-2.png"
     },
