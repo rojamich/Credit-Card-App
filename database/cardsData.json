@@ -114,11 +114,11 @@
       "card": "Alaska Card",
       "bank": "Alaska",
       "bonuses": {
-        "default": 2,
-        "alaska": 6,
-        "fuel": 4,
-        "EVcharging": 4,
-        "rideshare": 4
+        "default": 1,
+        "alaska": 3,
+        "fuel": 2,
+        "EVcharging": 2,
+        "rideshare": 2
       },
       "photoPath": "https://www.bankofamerica.com/content/images/ContextualSiteGraphics/CreditCardArt/en_US/Approved_PCM/1bbt_sigcm_v_mileageplan_250x158.png"
     },
@@ -148,8 +148,32 @@
         "default": 3,
         "airfare": 7,
         "restaurants": 7,
-        "hilton hotels": 14
+        "hilton_hotels": 14
       },
       "photoPath": "https://icm.aexp-static.com/acquisition/card-art/NUS000000329_480x304_straight_withname.png"
+    },
+    {
+      "card": "WELLS FARGO AUTOGRAPH VISA® CARD",
+      "bank": "Cash",
+      "bonuses": {
+        "default": 1,
+        "travel": 3,
+        "restaurants": 3,
+        "fuel": 3,
+        "EVcharging": 3,
+        "internet-cable-phone": 3
+      },
+      "photoPath": "https://www10.wellsfargomedia.com/services/static/assets/securesite/digitalchannel/ccimages/Autograph_Card.jpg"
+    },
+    {
+      "card": "Atmos Rewards Summit Visa Infinite",
+      "bank": "Alaska",
+      "bonuses": {
+        "default": 1,
+        "alaska": 3,
+        "restaurants": 3,
+        "foreign_transactions": 3
+      },
+      "photoPath": "https://www.bankofamerica.com/content/images/ContextualSiteGraphics/CreditCardArt/en_US/Approved_PCM/1bed_rewcm_v_atmos_visafront_infinite_250.png"
     }
   ]
