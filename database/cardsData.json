@@ -1,7 +1,7 @@
 [
     {
       "card": "Freedom Unlimited",
-      "bank": "Chase",
+      "bank": "chase",
       "bonuses": {
         "default": 1.5,
         "restaurants": 3,
@@ -11,7 +11,7 @@
     },
     {
       "card": "Freedom",
-      "bank": "Chase",
+      "bank": "chase",
       "bonuses": {
         "default": 1,
         "lyft": 2,
@@ -23,7 +23,7 @@
     },
     {
       "card": "Blue Cash Everyday",
-      "bank": "Cash",
+      "bank": "cash",
       "bonuses": {
         "default": 1,
         "groceries": 3,
@@ -33,8 +33,8 @@
       "photoPath": "https://www.aexp-static.com/online/myca/shared/summary/cardasset/images/NUS000000305_480x304_STRAIGHT_96.jpg"
     },
     {
-      "card": "Platinum",
-      "bank": "American Express",
+      "card": "AMEX Platinum",
+      "bank": "amex",
       "bonuses": {
         "airfare": 5,
         "groceries": 1
@@ -43,7 +43,7 @@
     },
     {
       "card": "Ducks Unlimited",
-      "bank": "Cash",
+      "bank": "cash",
       "bonuses": {
         "default": 1,
         "sporting_goods": 5,
@@ -53,7 +53,7 @@
     },
     {
       "card": "Ink Business Preferred",
-      "bank": "Chase",
+      "bank": "chase",
       "bonuses": {
         "default": 1,
         "airfare": 3,
@@ -67,25 +67,15 @@
     },
     {
       "card": "Venture X",
-      "bank": "Capital One",
+      "bank": "capital1",
       "bonuses": {
         "default": 2
       },
       "photoPath": "data:image/jpeg;base64,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"
     },
     {
-      "card": "Bilt",
-      "bank": "Bilt",
-      "bonuses": {
-        "default": 1,
-        "restaurants": 3,
-        "travel": 2
-      },
-      "photoPath": "https://creditcards.wellsfargo.com/W-Card-MarketPlace/v7-9-25/images/Products/Bilt/Bilt_card_D.png"
-    },
-    {
       "card": "Hyatt",
-      "bank": "Hyatt",
+      "bank": "hyatt",
       "bonuses": {
         "default": 1,
         "hyatt": 4,
@@ -99,7 +89,7 @@
     },
     {
       "card": "Amazon Prime",
-      "bank": "Cash",
+      "bank": "cash",
       "bonuses": {
         "default": 1,
         "amazon": 5,
@@ -112,7 +102,7 @@
     },
     {
       "card": "Alaska Card",
-      "bank": "Alaska",
+      "bank": "atmos",
       "bonuses": {
         "default": 1,
         "alaska": 3,
@@ -124,7 +114,7 @@
     },
     {
       "card": "Blue Business Plus",
-      "bank": "American Express",
+      "bank": "amex",
       "bonuses": {
         "default": 2
       },
@@ -132,7 +122,7 @@
     },
     {
       "card": "Golden1 Cash Rewards+",
-      "bank": "Cash",
+      "bank": "cash",
       "bonuses": {
         "default": 1,
         "EVcharging": 4,
@@ -143,7 +133,7 @@
     },
     {
       "card": "Hilton Honors Aspire Card",
-      "bank": "Hilton",
+      "bank": "hilton",
       "bonuses": {
         "default": 3,
         "airfare": 7,
@@ -154,7 +144,7 @@
     },
     {
       "card": "WELLS FARGO AUTOGRAPH VISA® CARD",
-      "bank": "Cash",
+      "bank": "wellsFargo",
       "bonuses": {
         "default": 1,
         "travel": 3,
@@ -167,7 +157,7 @@
     },
     {
       "card": "Atmos Rewards Summit Visa Infinite",
-      "bank": "Alaska",
+      "bank": "atmos",
       "bonuses": {
         "default": 1,
         "alaska": 3,
