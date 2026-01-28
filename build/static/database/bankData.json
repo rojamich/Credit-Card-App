@@ -1,27 +1,47 @@
 [
     {
-        "name": "Cash",
-        "type": "cash",
+        "name": "cash",
+        "type": "Cash Back",
         "value": 1
     },
     {
-        "name": "American Express",
-        "type": "AMEX points",
-        "value": 2
+        "name": "amex",
+        "type": "American Express Membership Rewards",
+        "value": 1.75
     },
     {
-        "name": "Chase",
-        "type": "UR points",
-        "value": 2.05
+        "name": "chase",
+        "type": "Chase Ultimate Rewards",
+        "value": 2.15
     },
     {
-        "name": "Capital One",
-        "type": "C1 points",
+        "name": "capital1",
+        "type": "Capital One Miles",
         "value": 1.85
     },
     {
-        "name": "Bilt",
-        "type": "Bilt Rewards",
-        "value": 2.05
+        "name": "wellsFargo",
+        "type": "Wells Fargo Rewards Points",
+        "value": 2.1
+    },
+    {
+        "name": "hyatt",
+        "type": "World of Hyatt Points",
+        "value": 2.3
+    },
+    {
+        "name": "atmos",
+        "type": "Atmos Rewards",
+        "value": 1.55
+    },
+    {
+        "name": "hilton",
+        "type": "Hilton Honors Points",
+        "value": 0.5
+    },
+    {
+        "name": "citi",
+        "type": "Citi Thank You",
+        "value": 1.3
     }
 ]

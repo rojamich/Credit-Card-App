@@ -3,8 +3,8 @@ async function fetchAndRenderBonuses() {
     try {
         // Fetch the card and bank data
         const [cardResponse, bankResponse] = await Promise.all([
-            fetch('/database/cardsData.json'),
-            fetch('/database/bankData.json'),
+            fetch('./database/cardsData.json'),
+            fetch('./database/bankData.json'),
         ]);
 
         if (!cardResponse.ok || !bankResponse.ok)
@@ -36,8 +36,8 @@ function extractUniqueBonuses(cardData) {
 // Sort bonuses alphabetically with "Default" first
 function sortBonuses(bonuses) {
     return bonuses.sort((a, b) => {
-        if (a === "Default") return -1;
-        if (b === "Default") return 1;
+        if (a === "default") return -1;
+        if (b === "default") return 1;
         return a.localeCompare(b);
     });
 }
@@ -60,10 +60,10 @@ function renderBonuses(bonuses, cardData, bankData) {
 
         const logo = document.createElement('img');
         logo.className = 'bonus-logo';
-        logo.src = `/logo/cardBonusesIcons/${bonus}-icon.png`;
+        logo.src = `./logo/cardBonusesIcons/${bonus}-icon.png`;
         logo.alt = `${bonus} Icon`;
         logo.onerror = () => {
-            logo.src = '/logo/cardBonusesIcons/default-icon.png';
+            logo.src = './logo/cardBonusesIcons/default-icon.png';
         };
 
         const name = document.createElement('span');
@@ -80,7 +80,7 @@ function renderBonuses(bonuses, cardData, bankData) {
 function showBestCard(bonus, cardData, bankData) {
     const relevantCards = cardData
         .map(card => {
-            const cardBonus = card.bonuses[bonus] || card.bonuses.Default; // Fallback to Default bonus
+            const cardBonus = card.bonuses[bonus] || card.bonuses.default; // Fallback to Default bonus
             const { multiplier, type } = getBankDetails(card.bank, bankData);
             const weightedBonus = cardBonus * multiplier;
 
