@@ -14,10 +14,8 @@
       "bank": "chase",
       "bonuses": {
         "default": 1,
-        "lyft": 2,
-        "department stores": 5,
-        "Paypal": 5,
-        "Chase Travel": 5
+        "lyft": 5,
+        "restaurants": 5
       },
       "photoPath": "https://www.uscreditcardguide.com/wp-content/uploads/freedom_card-2.png"
     },
@@ -165,5 +163,29 @@
         "foreign_transactions": 3
       },
       "photoPath": "https://www.bankofamerica.com/content/images/ContextualSiteGraphics/CreditCardArt/en_US/Approved_PCM/1bed_rewcm_v_atmos_visafront_infinite_250.png"
+    },
+    {
+      "card": "Business Gold Card",
+      "bank": "amex",
+      "bonuses": {
+        "default": 1,
+        "electronic_store_software": 4,
+        "restaurants": 4,
+        "internet-cable-phone": 4,
+        "fuel": 4,
+        "public_transportation": 4
+      },
+      "photoPath": "https://www.aexp-static.com/online/myca/shared/summary/cardasset/images/NUS000000324_480x304_STRAIGHT_96.jpg"
+    },
+    {
+      "card": "Citi Strata Elite℠ Card",
+      "bank": "citi",
+      "bonuses": {
+        "default": 1.5,
+        "cititravel": 6,
+        "restaurants": 3,
+        "citinights_Fri_Sat_6am_6pm_EST": 6
+      },
+      "photoPath": "https://www.aexp-static.com/online/myca/shared/summary/cardasset/images/NUS000000324_480x304_STRAIGHT_96.jpg"
     }
   ]
