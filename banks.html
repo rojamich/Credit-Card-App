@@ -3,58 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank Data</title>
+    <title>Banks</title>
     <link rel="stylesheet" href="./styles/mainStyle.css?v=2026-03-04">
     <link rel="stylesheet" href="./styles/adminStyle.css?v=2026-03-04">
-    <link rel="icon" href="./logo/wallet.png" type="image/png">
+    <link rel="icon" href="./favicon.ico" type="image/x-icon">
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#0b57d0">
 </head>
 <body>
-    <header>
-        <h1>Card Optimizer</h1>
-        <nav>
-            <ul>
-                <li>
-                    <a href="./index.html">
-                        <img src="./logo/wallet.png" class="header-btn" alt="wallet">
-                    </a>
-                </li>
-                <li><a class="nav-link" href="./banks.html">Banks</a></li>
-                <li><a class="nav-link" href="./cards.html">Cards</a></li>
-            </ul>
-        </nav>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="./index.html">
+                <img src="./logo/wallet.png" class="brand-logo" alt="Card Optimizer">
+                <span>Card Optimizer</span>
+            </a>
+            <nav class="topnav" aria-label="Primary">
+                <a class="nav-tab" href="./index.html">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v2H3V7zm0 4h18v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-6zm3 2v2h4v-2H6z"/></svg>
+                    <span>Wallet</span>
+                </a>
+                <a class="nav-tab is-active" href="./banks.html" aria-current="page">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 8v2h20V8L12 3zm-7 9h2v6H5v-6zm4 0h2v6H9v-6zm4 0h2v6h-2v-6zm4 0h2v6h-2v-6zM2 20h20v2H2z"/></svg>
+                    <span>Banks</span>
+                </a>
+                <a class="nav-tab" href="./cards.html">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v2H2V6zm0 4h20v8a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-8zm3 3h6v2H5v-2z"/></svg>
+                    <span>Cards</span>
+                </a>
+            </nav>
+        </div>
     </header>
 
     <main class="admin-page">
-        <h2>Bank Values</h2>
-        <p class="help-text">Edit reward types/values used to rank cards. Data is saved locally on this device. Use decimal values (example: 2.15).</p>
+        <section class="section-head">
+            <h2>Banks</h2>
+            <p class="help-text">Manage display labels and reward multipliers. Bank key auto-generates from label.</p>
+        </section>
 
         <div class="actions">
             <button id="add-bank-button" type="button">Add Bank</button>
             <button id="save-banks-button" type="button">Save All Banks</button>
-            <button id="export-banks-button" type="button">Export Banks</button>
-            <button id="import-banks-button" type="button">Import Banks</button>
-            <button id="sync-banks-button" type="button">Sync From Online Source</button>
-            <input id="import-banks-file" type="file" accept="application/json" class="hidden-file-input">
         </div>
+
+        <details class="advanced-panel">
+            <summary>Advanced</summary>
+            <div class="actions advanced-actions">
+                <button id="export-banks-button" type="button">Export JSON</button>
+                <button id="import-banks-button" type="button">Import JSON</button>
+                <button id="sync-banks-button" type="button">Sync From Database JSON</button>
+                <input id="import-banks-file" type="file" accept="application/json" class="hidden-file-input">
+            </div>
+        </details>
 
         <div id="banks-message" class="message" aria-live="polite"></div>
-
-        <div class="table-wrap">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Bank Key</th>
-                        <th>Bank Label</th>
-                        <th>Reward Type</th>
-                        <th>Multiplier</th>
-                    </tr>
-                </thead>
-                <tbody id="banks-table-body"></tbody>
-            </table>
-        </div>
+        <div id="banks-container" class="entity-grid"></div>
     </main>
+
+    <div id="bank-editor-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bank-editor-title">
+        <div class="modal-panel">
+            <div class="modal-head">
+                <h3 id="bank-editor-title">Edit Bank</h3>
+                <button id="close-bank-editor-button" type="button" class="icon-button" aria-label="Close">X</button>
+            </div>
+
+            <div id="bank-editor-errors" class="form-errors"></div>
+
+            <form id="bank-editor-form" class="card-form">
+                <label for="bank-label-input">Bank Label</label>
+                <input id="bank-label-input" type="text" required>
+
+                <div class="inline-row">
+                    <label><input id="bank-key-manual-checkbox" type="checkbox"> Edit key manually (advanced)</label>
+                </div>
+
+                <label for="bank-key-input">Bank Key</label>
+                <input id="bank-key-input" type="text" required>
+
+                <label for="bank-type-input">Reward Type</label>
+                <input id="bank-type-input" type="text" required placeholder="Cash Back">
+
+                <label for="bank-value-input">Multiplier</label>
+                <input id="bank-value-input" type="number" min="0" step="0.01" required>
+
+                <div class="modal-actions">
+                    <button id="save-bank-editor-button" type="submit">Save Bank</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="./js/dataStore.js?v=2026-03-04"></script>
     <script src="./js/banksScript.js?v=2026-03-04"></script>

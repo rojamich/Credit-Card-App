@@ -130,7 +130,7 @@ function showBestCard(bonus, cardData, bankData) {
             return {
                 card: card.card,
                 bank: card.bank,
-                photoPath: card.photoPath,
+                photoPath: card.photo || card.photoPath || "",
                 appliedBonus: numericBonus,
                 weightedValue,
                 bankType: bankDetails.type,
@@ -180,8 +180,11 @@ function showBestCard(bonus, cardData, bankData) {
 
         const image = document.createElement("img");
         image.className = "popup-card-image";
-        image.src = card.photoPath;
+        image.src = card.photoPath || "./logo/cardBonusesIcons/default-icon.png";
         image.alt = card.card;
+        image.onerror = () => {
+            image.src = "./logo/cardBonusesIcons/default-icon.png";
+        };
 
         const title = document.createElement("h2");
         title.textContent = card.card;

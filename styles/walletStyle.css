@@ -1,4 +1,10 @@
 /* Center the container on the page */
+.wallet-page {
+    max-width: 1120px;
+    margin: 20px auto;
+    padding: 0 14px 30px;
+}
+
 .bonus-container {
     display: flex;
     flex-wrap: wrap;

@@ -163,6 +163,7 @@ function validateAndNormalizeCards(payload) {
         const normalized = {
             card: "",
             bank: "",
+            photo: "",
             photoPath: "",
             bonuses: { default: 1 },
         };
@@ -172,9 +173,27 @@ function validateAndNormalizeCards(payload) {
             return normalized;
         }
 
-        normalized.card = String(card.card ?? "").trim();
+        normalized.card = String(card.card ?? card.name ?? "").trim();
         normalized.bank = String(card.bank ?? "").trim();
-        normalized.photoPath = String(card.photoPath ?? "").trim();
+        normalized.photo = String(card.photo ?? card.image ?? card.photoPath ?? "").trim();
+        normalized.photoPath = normalized.photo;
+
+        if (Object.prototype.hasOwnProperty.call(card, "annualFee") && card.annualFee !== "" && card.annualFee !== null) {
+            const annualFeeValue = toFiniteNumber(card.annualFee);
+            if (annualFeeValue === null) {
+                errors.push(`Card ${cardNum}: annual fee must be numeric when provided.`);
+            } else {
+                normalized.annualFee = annualFeeValue;
+            }
+        }
+
+        if (Object.prototype.hasOwnProperty.call(card, "notes")) {
+            normalized.notes = String(card.notes ?? "").trim();
+        }
+
+        if (Object.prototype.hasOwnProperty.call(card, "tags") && Array.isArray(card.tags)) {
+            normalized.tags = card.tags.map((tag) => String(tag).trim()).filter(Boolean);
+        }
 
         if (!normalized.card) errors.push(`Card ${cardNum}: card name is required.`);
         if (!normalized.bank) errors.push(`Card ${cardNum}: bank is required.`);
@@ -224,9 +243,9 @@ function normalizeCardsForRuntime(payload) {
     return payload
         .filter((card) => card && typeof card === "object")
         .map((card) => {
-            const cardName = String(card.card ?? "").trim();
+            const cardName = String(card.card ?? card.name ?? "").trim();
             const bank = String(card.bank ?? "").trim();
-            const photoPath = String(card.photoPath ?? "").trim();
+            const photo = String(card.photo ?? card.image ?? card.photoPath ?? "").trim();
             const rawBonuses = card.bonuses && typeof card.bonuses === "object" && !Array.isArray(card.bonuses)
                 ? card.bonuses
                 : {};
@@ -247,12 +266,28 @@ function normalizeCardsForRuntime(payload) {
                 bonuses.default = defaultValue === null ? 1 : defaultValue;
             }
 
-            return {
+            const normalized = {
                 card: cardName,
                 bank,
-                photoPath,
+                photo,
+                photoPath: photo,
                 bonuses,
             };
+
+            if (Object.prototype.hasOwnProperty.call(card, "annualFee") && card.annualFee !== "" && card.annualFee !== null) {
+                const annualFeeValue = toFiniteNumber(card.annualFee);
+                if (annualFeeValue !== null) normalized.annualFee = annualFeeValue;
+            }
+
+            if (Object.prototype.hasOwnProperty.call(card, "notes")) {
+                normalized.notes = String(card.notes ?? "").trim();
+            }
+
+            if (Object.prototype.hasOwnProperty.call(card, "tags") && Array.isArray(card.tags)) {
+                normalized.tags = card.tags.map((tag) => String(tag).trim()).filter(Boolean);
+            }
+
+            return normalized;
         })
         .filter((card) => card.card);
 }
