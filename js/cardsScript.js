@@ -3,6 +3,7 @@ const messageEl = document.getElementById("cards-message");
 const addCardButton = document.getElementById("add-card-button");
 const saveCardsButton = document.getElementById("save-cards-button");
 const exportCardsButton = document.getElementById("export-cards-button");
+const exportCardsPublishButton = document.getElementById("export-cards-publish-button");
 const importCardsButton = document.getElementById("import-cards-button");
 const syncCardsButton = document.getElementById("sync-cards-button");
 const importCardsFile = document.getElementById("import-cards-file");
@@ -466,7 +467,7 @@ function validateCurrentCards() {
 function saveCards() {
     const validation = validateCurrentCards();
     if (!validation.ok) {
-        setMessage(`Save blocked:\n${validation.errors.map((e) => `- ${e}`).join("\n")}`, true);
+        setMessage(buildSaveBlockedMessage(validation.errors), true);
         return;
     }
     cards = validation.data;
@@ -487,14 +488,33 @@ function downloadJson(filename, data) {
     URL.revokeObjectURL(url);
 }
 
+function buildSaveBlockedMessage(errors) {
+    return `Save blocked:\n${errors.map((e) => `- ${e}`).join("\n")}`;
+}
+
+function getBackupCardsFilename() {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    return `cardsData-export-${stamp}.json`;
+}
+
 function exportCards() {
     const validation = validateCurrentCards();
     if (!validation.ok) {
-        setMessage(`Export blocked:\n${validation.errors.map((e) => `- ${e}`).join("\n")}`, true);
+        setMessage(buildSaveBlockedMessage(validation.errors), true);
         return;
     }
-    downloadJson("cardsData-export.json", validation.data);
-    setMessage("Cards exported.", false);
+    downloadJson(getBackupCardsFilename(), validation.data);
+    setMessage("Cards backup exported.", false);
+}
+
+function exportCardsForPublish() {
+    const validation = validateCurrentCards();
+    if (!validation.ok) {
+        setMessage(buildSaveBlockedMessage(validation.errors), true);
+        return;
+    }
+    downloadJson("cards.json", validation.data);
+    setMessage("Saved cards.json. Replace /database/cards.json in your repo with this file and commit.", false);
 }
 
 function importCardsFromFile(event) {
@@ -638,6 +658,9 @@ cardModal.addEventListener("click", (event) => {
 addCardButton.addEventListener("click", () => openCardEditor(null));
 saveCardsButton.addEventListener("click", saveCards);
 exportCardsButton.addEventListener("click", exportCards);
+if (exportCardsPublishButton) {
+    exportCardsPublishButton.addEventListener("click", exportCardsForPublish);
+}
 importCardsButton.addEventListener("click", () => importCardsFile.click());
 importCardsFile.addEventListener("change", importCardsFromFile);
 syncCardsButton.addEventListener("click", syncCardsFromSource);

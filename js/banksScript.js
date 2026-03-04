@@ -3,6 +3,7 @@ const messageEl = document.getElementById("banks-message");
 const addBankButton = document.getElementById("add-bank-button");
 const saveBanksButton = document.getElementById("save-banks-button");
 const exportBanksButton = document.getElementById("export-banks-button");
+const exportBanksPublishButton = document.getElementById("export-banks-publish-button");
 const importBanksButton = document.getElementById("import-banks-button");
 const syncBanksButton = document.getElementById("sync-banks-button");
 const importBanksFile = document.getElementById("import-banks-file");
@@ -153,7 +154,7 @@ function validateCurrentBanks() {
 function saveBanks() {
     const validation = validateCurrentBanks();
     if (!validation.ok) {
-        setMessage(`Save blocked:\n${validation.errors.map((e) => `- ${e}`).join("\n")}`, true);
+        setMessage(buildSaveBlockedMessage(validation.errors), true);
         return;
     }
 
@@ -175,14 +176,33 @@ function downloadJson(filename, data) {
     URL.revokeObjectURL(url);
 }
 
+function buildSaveBlockedMessage(errors) {
+    return `Save blocked:\n${errors.map((e) => `- ${e}`).join("\n")}`;
+}
+
+function getBackupBanksFilename() {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    return `bankData-export-${stamp}.json`;
+}
+
 function exportBanks() {
     const validation = validateCurrentBanks();
     if (!validation.ok) {
-        setMessage(`Export blocked:\n${validation.errors.map((e) => `- ${e}`).join("\n")}`, true);
+        setMessage(buildSaveBlockedMessage(validation.errors), true);
         return;
     }
-    downloadJson("bankData-export.json", validation.data);
-    setMessage("Banks exported.", false);
+    downloadJson(getBackupBanksFilename(), validation.data);
+    setMessage("Banks backup exported.", false);
+}
+
+function exportBanksForPublish() {
+    const validation = validateCurrentBanks();
+    if (!validation.ok) {
+        setMessage(buildSaveBlockedMessage(validation.errors), true);
+        return;
+    }
+    downloadJson("banks.json", validation.data);
+    setMessage("Saved banks.json. Replace /database/banks.json in your repo with this file and commit.", false);
 }
 
 function importBanksFromFile(event) {
@@ -273,6 +293,9 @@ bankModal.addEventListener("click", (event) => {
 addBankButton.addEventListener("click", () => openBankEditor(null));
 saveBanksButton.addEventListener("click", saveBanks);
 exportBanksButton.addEventListener("click", exportBanks);
+if (exportBanksPublishButton) {
+    exportBanksPublishButton.addEventListener("click", exportBanksForPublish);
+}
 importBanksButton.addEventListener("click", () => importBanksFile.click());
 importBanksFile.addEventListener("change", importBanksFromFile);
 syncBanksButton.addEventListener("click", syncBanksFromSource);
