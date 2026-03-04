@@ -17,6 +17,7 @@ const cardBankSelect = document.getElementById("card-bank-select");
 const cardBankCustomWrap = document.getElementById("card-bank-custom-wrap");
 const cardBankCustomInput = document.getElementById("card-bank-custom-input");
 const cardAnnualFeeInput = document.getElementById("card-annual-fee-input");
+const cardInWalletInput = document.getElementById("card-in-wallet-input");
 const photoModeUpload = document.getElementById("photo-mode-upload");
 const photoModeUrl = document.getElementById("photo-mode-url");
 const photoUploadWrap = document.getElementById("photo-upload-wrap");
@@ -147,6 +148,12 @@ function renderCards() {
         info.appendChild(createTileMeta(`Bank: ${bank ? bank.label : card.bank}`));
         if (typeof card.annualFee === "number" && Number.isFinite(card.annualFee)) {
             info.appendChild(createTileMeta(`Annual Fee: $${card.annualFee.toFixed(0)}`));
+        }
+        if (card.inWallet === false) {
+            const availability = document.createElement("span");
+            availability.className = "status-badge status-badge-muted";
+            availability.textContent = "Not in wallet";
+            info.appendChild(availability);
         }
 
         const bonusEntries = Object.entries(card.bonuses || {})
@@ -324,6 +331,7 @@ function openCardEditor(index) {
     cardNameInput.value = card.card || "";
     renderBankSelect(card.bank || "");
     cardAnnualFeeInput.value = typeof card.annualFee === "number" ? String(card.annualFee) : "";
+    cardInWalletInput.checked = card.inWallet !== false;
 
     currentPhotoValue = getCardPhoto(card);
     cardPhotoUrlInput.value = /^https?:\/\//i.test(currentPhotoValue) ? currentPhotoValue : "";
@@ -410,6 +418,7 @@ function collectCardFromForm() {
     const card = {
         card: name,
         bank: bankKey,
+        inWallet: cardInWalletInput.checked,
         photo: currentPhotoValue || "",
         photoPath: currentPhotoValue || "",
         bonuses: bonusesResult.bonuses,

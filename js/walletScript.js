@@ -1,14 +1,21 @@
 const {
     loadDataset: dsLoadDataset,
+    readLocalJson: dsReadLocalJson,
+    writeLocalJson: dsWriteLocalJson,
+    validateAndNormalizeCards: dsValidateAndNormalizeCards,
+    validateAndNormalizeBanks: dsValidateAndNormalizeBanks,
     CARDS_STORAGE_KEY: cardsStorageKey,
     BANKS_STORAGE_KEY: banksStorageKey,
     normalizeBonusKey: dsNormalizeBonusKey,
     normalizeBankName: dsNormalizeBankName,
     normalizeCardsForRuntime: dsNormalizeCardsForRuntime,
     normalizeBanksForRuntime: dsNormalizeBanksForRuntime,
+    prettyLabelFromKey: dsPrettyLabelFromKey,
 } = window.CCDataStore;
 
 const FAVORITES_STORAGE_KEY = "wallet.favoriteCategories";
+const ONLY_WALLET_STORAGE_KEY = "wallet.onlyInWalletCards";
+const LAST_SYNC_STORAGE_KEY = "wallet.lastSync";
 const DEFAULT_ONLY_CATEGORY_KEY = "__default__";
 
 const walletState = {
@@ -17,30 +24,90 @@ const walletState = {
     categories: [],
     favoriteCategories: new Set(),
     selectedCategoryKey: null,
+    useOnlyWalletCards: true,
 };
+
+const onlyWalletToggle = document.getElementById("only-wallet-cards-toggle");
+const refreshDataButton = document.getElementById("refresh-wallet-data-button");
+const resetDataButton = document.getElementById("reset-wallet-data-button");
+const controlsMessageEl = document.getElementById("wallet-controls-message");
+const lastSyncEl = document.getElementById("wallet-last-sync");
+
+function setControlsMessage(message, isError) {
+    if (!controlsMessageEl) return;
+    controlsMessageEl.textContent = message;
+    controlsMessageEl.className = `wallet-status ${isError ? "is-error" : "is-success"}`;
+}
+
+function formatTimestamp(isoValue) {
+    if (!isoValue) return "Never";
+    const parsed = new Date(isoValue);
+    if (Number.isNaN(parsed.getTime())) return "Never";
+    return parsed.toLocaleString();
+}
+
+function renderLastSync() {
+    if (!lastSyncEl) return;
+    const raw = localStorage.getItem(LAST_SYNC_STORAGE_KEY);
+    lastSyncEl.textContent = `Last synced: ${formatTimestamp(raw)}`;
+}
+
+function loadOnlyWalletSetting() {
+    try {
+        const stored = localStorage.getItem(ONLY_WALLET_STORAGE_KEY);
+        if (stored === null) return true;
+        return stored !== "false";
+    } catch (error) {
+        return true;
+    }
+}
+
+function saveOnlyWalletSetting(value) {
+    try {
+        localStorage.setItem(ONLY_WALLET_STORAGE_KEY, value ? "true" : "false");
+    } catch (error) {
+        // Ignore storage write failures.
+    }
+}
+
+async function loadWalletData() {
+    const [rawCards, rawBanks] = await Promise.all([
+        dsLoadDataset(cardsStorageKey, "./database/cardsData.json"),
+        dsLoadDataset(banksStorageKey, "./database/bankData.json"),
+    ]);
+
+    walletState.cardData = dsNormalizeCardsForRuntime(rawCards);
+    walletState.bankData = dsNormalizeBanksForRuntime(rawBanks);
+}
+
+function refreshWalletUi() {
+    const cardCategories = getAllCategoriesFromCards(walletState.cardData);
+    walletState.categories = [...cardCategories, DEFAULT_ONLY_CATEGORY_KEY];
+
+    walletState.favoriteCategories = loadFavoriteCategories();
+    syncFavoriteCategories(walletState.categories, walletState.favoriteCategories);
+
+    if (walletState.selectedCategoryKey && !walletState.categories.includes(walletState.selectedCategoryKey)) {
+        walletState.selectedCategoryKey = null;
+    }
+
+    renderQuickCategories(walletState.categories, walletState.favoriteCategories, walletState.selectedCategoryKey);
+    renderBonuses(sortBonuses(cardCategories), walletState.cardData);
+}
 
 async function fetchAndRenderBonuses() {
     try {
-        const [rawCards, rawBanks] = await Promise.all([
-            dsLoadDataset(cardsStorageKey, "./database/cardsData.json"),
-            dsLoadDataset(banksStorageKey, "./database/bankData.json"),
-        ]);
+        walletState.useOnlyWalletCards = loadOnlyWalletSetting();
+        if (onlyWalletToggle) onlyWalletToggle.checked = walletState.useOnlyWalletCards;
+        renderLastSync();
 
-        walletState.cardData = dsNormalizeCardsForRuntime(rawCards);
-        walletState.bankData = dsNormalizeBanksForRuntime(rawBanks);
-
-        const cardCategories = getAllCategoriesFromCards(walletState.cardData);
-        walletState.categories = [...cardCategories, DEFAULT_ONLY_CATEGORY_KEY];
-
-        walletState.favoriteCategories = loadFavoriteCategories();
-        syncFavoriteCategories(walletState.categories, walletState.favoriteCategories);
-
-        renderQuickCategories(walletState.categories, walletState.favoriteCategories, walletState.selectedCategoryKey);
+        await loadWalletData();
+        refreshWalletUi();
         attachQuickCategoryEvents();
-
-        renderBonuses(sortBonuses(cardCategories), walletState.cardData, walletState.bankData);
+        attachWalletControlEvents();
     } catch (error) {
         console.error("Error fetching or rendering bonuses:", error);
+        setControlsMessage("Offline: using saved data.", true);
     }
 }
 
@@ -103,6 +170,7 @@ function getAllCategoriesFromCards(cardData) {
 
 function prettyLabelFromKey(key) {
     if (key === DEFAULT_ONLY_CATEGORY_KEY) return "Other";
+    if (typeof dsPrettyLabelFromKey === "function") return dsPrettyLabelFromKey(key);
     const normalized = dsNormalizeBonusKey(key);
     if (!normalized) return "Unknown";
     return normalized
@@ -173,7 +241,7 @@ function renderQuickCategories(categories, favoritesSet, selectedCategoryKey) {
         favoriteButton.setAttribute("aria-label", `Favorite ${label}`);
         favoriteButton.setAttribute("aria-pressed", isFavorite ? "true" : "false");
         favoriteButton.title = isFavorite ? "Remove favorite" : "Favorite";
-        favoriteButton.textContent = isFavorite ? "★" : "☆";
+        favoriteButton.textContent = isFavorite ? "\u2605" : "\u2606";
 
         item.appendChild(selectButton);
         item.appendChild(favoriteButton);
@@ -207,13 +275,6 @@ function attachQuickCategoryEvents() {
     });
 }
 
-function selectCategory(categoryKey) {
-    walletState.selectedCategoryKey = categoryKey;
-    renderQuickCategories(walletState.categories, walletState.favoriteCategories, walletState.selectedCategoryKey);
-    updateBonusSelectionHighlight(categoryKey);
-    showBestCard(categoryKey, walletState.cardData, walletState.bankData);
-}
-
 function getBankDetails(bankName, bankData) {
     const normalizedCardBank = dsNormalizeBankName(bankName);
     const matchedBank = bankData.find((bank) => dsNormalizeBankName(bank.key) === normalizedCardBank);
@@ -237,7 +298,7 @@ function getBankDetails(bankName, bankData) {
     };
 }
 
-function renderBonuses(bonuses, cardData, bankData) {
+function renderBonuses(bonuses, cardData) {
     const container = document.getElementById("bonus-container");
     if (!container) return;
 
@@ -279,6 +340,18 @@ function updateBonusSelectionHighlight(selectedCategoryKey) {
     });
 }
 
+function getEffectiveCardsForRanking(allCards) {
+    if (!walletState.useOnlyWalletCards) return allCards;
+    return allCards.filter((card) => card.inWallet !== false);
+}
+
+function selectCategory(categoryKey) {
+    walletState.selectedCategoryKey = categoryKey;
+    renderQuickCategories(walletState.categories, walletState.favoriteCategories, walletState.selectedCategoryKey);
+    updateBonusSelectionHighlight(categoryKey);
+    showBestCard(categoryKey, walletState.cardData, walletState.bankData);
+}
+
 function createInfoLine(text) {
     const line = document.createElement("p");
     line.textContent = text;
@@ -293,7 +366,9 @@ function showBestCard(bonus, cardData, bankData) {
     const existingPopup = document.querySelector(".popup");
     if (existingPopup) existingPopup.remove();
 
-    const relevantCards = cardData
+    const rankingCards = getEffectiveCardsForRanking(cardData);
+
+    const relevantCards = rankingCards
         .map((card) => {
             const normalizedBonuses = card.bonuses || {};
             const hasCategoryBonus = !isDefaultOnly && Object.prototype.hasOwnProperty.call(normalizedBonuses, normalizedBonus);
@@ -327,9 +402,11 @@ function showBestCard(bonus, cardData, bankData) {
         });
 
     if (!relevantCards.length) {
-        console.warn(`No valid cards found for bonus: ${normalizedBonus}`);
+        setControlsMessage("No eligible cards for this category.", true);
         return;
     }
+
+    setControlsMessage("", false);
 
     let currentIndex = 0;
 
@@ -425,6 +502,90 @@ function showBestCard(bonus, cardData, bankData) {
     updatePopupContent();
     document.body.appendChild(popup);
     document.addEventListener("keydown", onKeyDown);
+}
+
+async function fetchFirstAvailableJson(paths) {
+    let lastError = null;
+    for (const path of paths) {
+        try {
+            const response = await fetch(`${path}?ts=${Date.now()}`, { cache: "no-store" });
+            if (!response.ok) {
+                lastError = new Error(`Failed to fetch ${path}`);
+                continue;
+            }
+            return response.json();
+        } catch (error) {
+            lastError = error;
+        }
+    }
+    throw lastError || new Error("No available dataset source.");
+}
+
+async function refreshDataFromNetwork() {
+    try {
+        const [remoteCards, remoteBanks] = await Promise.all([
+            fetchFirstAvailableJson(["./database/cards.json", "./database/cardsData.json"]),
+            fetchFirstAvailableJson(["./database/banks.json", "./database/bankData.json"]),
+        ]);
+
+        const cardsValidation = dsValidateAndNormalizeCards(remoteCards);
+        const banksValidation = dsValidateAndNormalizeBanks(remoteBanks);
+        if (!cardsValidation.ok) throw new Error(cardsValidation.errors.join(" "));
+        if (!banksValidation.ok) throw new Error(banksValidation.errors.join(" "));
+
+        dsWriteLocalJson(cardsStorageKey, cardsValidation.data);
+        dsWriteLocalJson(banksStorageKey, banksValidation.data);
+        localStorage.setItem(LAST_SYNC_STORAGE_KEY, new Date().toISOString());
+        renderLastSync();
+
+        await loadWalletData();
+        refreshWalletUi();
+        setControlsMessage("Data refreshed.", false);
+    } catch (error) {
+        const localCards = dsReadLocalJson(cardsStorageKey);
+        const localBanks = dsReadLocalJson(banksStorageKey);
+        if (localCards && localBanks) {
+            await loadWalletData();
+            refreshWalletUi();
+        }
+        setControlsMessage("Offline: using saved data.", true);
+    }
+}
+
+function resetLocalWalletData() {
+    const keysToClear = [
+        cardsStorageKey,
+        banksStorageKey,
+        FAVORITES_STORAGE_KEY,
+        ONLY_WALLET_STORAGE_KEY,
+        LAST_SYNC_STORAGE_KEY,
+    ];
+
+    keysToClear.forEach((key) => localStorage.removeItem(key));
+    location.reload();
+}
+
+function attachWalletControlEvents() {
+    if (onlyWalletToggle && onlyWalletToggle.dataset.bound !== "true") {
+        onlyWalletToggle.dataset.bound = "true";
+        onlyWalletToggle.addEventListener("change", () => {
+            walletState.useOnlyWalletCards = Boolean(onlyWalletToggle.checked);
+            saveOnlyWalletSetting(walletState.useOnlyWalletCards);
+            if (walletState.selectedCategoryKey) {
+                showBestCard(walletState.selectedCategoryKey, walletState.cardData, walletState.bankData);
+            }
+        });
+    }
+
+    if (refreshDataButton && refreshDataButton.dataset.bound !== "true") {
+        refreshDataButton.dataset.bound = "true";
+        refreshDataButton.addEventListener("click", refreshDataFromNetwork);
+    }
+
+    if (resetDataButton && resetDataButton.dataset.bound !== "true") {
+        resetDataButton.dataset.bound = "true";
+        resetDataButton.addEventListener("click", resetLocalWalletData);
+    }
 }
 
 fetchAndRenderBonuses();

@@ -64,6 +64,21 @@ function toFiniteNumber(value) {
     return Number.isFinite(num) ? num : null;
 }
 
+function coerceInWallet(value) {
+    if (typeof value === "boolean") return value;
+    if (value === null || typeof value === "undefined" || value === "") return true;
+    if (typeof value === "number") return value !== 0;
+
+    if (typeof value === "string") {
+        const normalized = value.trim().toLowerCase();
+        if (!normalized) return true;
+        if (["false", "0", "no", "off", "n"].includes(normalized)) return false;
+        if (["true", "1", "yes", "on", "y"].includes(normalized)) return true;
+    }
+
+    return Boolean(value);
+}
+
 function validateAndNormalizeBanks(payload) {
     const errors = [];
     if (!Array.isArray(payload)) {
@@ -165,6 +180,7 @@ function validateAndNormalizeCards(payload) {
             bank: "",
             photo: "",
             photoPath: "",
+            inWallet: true,
             bonuses: { default: 1 },
         };
 
@@ -177,6 +193,7 @@ function validateAndNormalizeCards(payload) {
         normalized.bank = String(card.bank ?? "").trim();
         normalized.photo = String(card.photo ?? card.image ?? card.photoPath ?? "").trim();
         normalized.photoPath = normalized.photo;
+        normalized.inWallet = coerceInWallet(card.inWallet);
 
         if (Object.prototype.hasOwnProperty.call(card, "annualFee") && card.annualFee !== "" && card.annualFee !== null) {
             const annualFeeValue = toFiniteNumber(card.annualFee);
@@ -271,6 +288,7 @@ function normalizeCardsForRuntime(payload) {
                 bank,
                 photo,
                 photoPath: photo,
+                inWallet: coerceInWallet(card.inWallet),
                 bonuses,
             };
 

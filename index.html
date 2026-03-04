@@ -44,6 +44,18 @@
                 <h2 id="quick-categories-title">Quick Categories</h2>
                 <p>Tap a category to see the best card. Star categories to pin them first.</p>
             </div>
+            <div class="wallet-controls">
+                <label class="wallet-toggle">
+                    <input id="only-wallet-cards-toggle" type="checkbox" checked>
+                    <span>Only cards in my wallet</span>
+                </label>
+                <div class="wallet-actions">
+                    <button id="refresh-wallet-data-button" type="button" class="wallet-action-button">Refresh data</button>
+                    <button id="reset-wallet-data-button" type="button" class="wallet-action-button wallet-action-danger">Reset local data</button>
+                </div>
+                <p id="wallet-last-sync" class="wallet-status" aria-live="polite"></p>
+                <p id="wallet-controls-message" class="wallet-status" aria-live="polite"></p>
+            </div>
             <div id="quick-categories-grid" class="quick-categories-grid"></div>
         </section>
         <div class="bonus-container" id="bonus-container"></div>
