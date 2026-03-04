@@ -18,6 +18,7 @@ const {
     normalizeBankName: dsNormalizeBankName,
 } = window.CCDataStore;
 
+let knownBanks = [];
 let knownBankKeys = new Set();
 
 function setMessage(text, isError) {
@@ -34,9 +35,13 @@ function formatBonuses(bonuses) {
 }
 
 function updateBankWarning(editor) {
-    const bankInput = editor.querySelector('[data-field="bank"]');
+    const select = editor.querySelector('[data-field="bank-select"]');
+    const customInput = editor.querySelector('[data-field="bank-custom"]');
     const warning = editor.querySelector('[data-role="bank-warning"]');
-    const bankKey = dsNormalizeBankName(bankInput.value);
+    const selected = select ? select.value : "";
+    const bankKey = selected === "__custom__"
+        ? dsNormalizeBankName(customInput ? customInput.value : "")
+        : dsNormalizeBankName(selected);
 
     if (!bankKey || knownBankKeys.has(bankKey)) {
         warning.textContent = "";
@@ -44,7 +49,7 @@ function updateBankWarning(editor) {
         return;
     }
 
-    warning.textContent = `Unknown bank "${bankInput.value.trim()}" (wallet will use multiplier 1).`;
+    warning.textContent = `Unknown bank "${selected === "__custom__" ? customInput.value.trim() : selected}" (wallet will use multiplier 1).`;
     warning.classList.add("active");
 }
 
@@ -71,11 +76,26 @@ function createCardEditor(card = { card: "", bank: "", photoPath: "", bonuses: {
     cardInput.dataset.field = "card";
     cardInput.value = card.card || "";
 
-    const bankLabel = createFieldLabel("Bank Name Key");
-    const bankInput = document.createElement("input");
-    bankInput.type = "text";
-    bankInput.dataset.field = "bank";
-    bankInput.value = card.bank || "";
+    const bankLabel = createFieldLabel("Bank");
+    const bankSelect = document.createElement("select");
+    bankSelect.dataset.field = "bank-select";
+
+    knownBanks.forEach((bank) => {
+        const option = document.createElement("option");
+        option.value = bank.key;
+        option.textContent = bank.label;
+        bankSelect.appendChild(option);
+    });
+
+    const customOption = document.createElement("option");
+    customOption.value = "__custom__";
+    customOption.textContent = "(Custom...)";
+    bankSelect.appendChild(customOption);
+
+    const customBankInput = document.createElement("input");
+    customBankInput.type = "text";
+    customBankInput.dataset.field = "bank-custom";
+    customBankInput.placeholder = "Custom bank key";
 
     const bankWarning = document.createElement("p");
     bankWarning.className = "card-warning";
@@ -95,7 +115,8 @@ function createCardEditor(card = { card: "", bank: "", photoPath: "", bonuses: {
     fields.appendChild(cardLabel);
     fields.appendChild(cardInput);
     fields.appendChild(bankLabel);
-    fields.appendChild(bankInput);
+    fields.appendChild(bankSelect);
+    fields.appendChild(customBankInput);
     fields.appendChild(bankWarning);
     fields.appendChild(photoLabel);
     fields.appendChild(photoInput);
@@ -104,7 +125,29 @@ function createCardEditor(card = { card: "", bank: "", photoPath: "", bonuses: {
 
     wrapper.appendChild(fields);
 
-    bankInput.addEventListener("input", () => updateBankWarning(wrapper));
+    const normalizedCardBank = dsNormalizeBankName(card.bank);
+    if (normalizedCardBank && knownBankKeys.has(normalizedCardBank)) {
+        bankSelect.value = normalizedCardBank;
+        customBankInput.value = "";
+        customBankInput.style.display = "none";
+    } else {
+        bankSelect.value = "__custom__";
+        customBankInput.value = card.bank || "";
+        customBankInput.style.display = "block";
+    }
+
+    bankSelect.addEventListener("change", () => {
+        if (bankSelect.value === "__custom__") {
+            customBankInput.style.display = "block";
+            customBankInput.focus();
+        } else {
+            customBankInput.style.display = "none";
+            customBankInput.value = "";
+        }
+        updateBankWarning(wrapper);
+    });
+
+    customBankInput.addEventListener("input", () => updateBankWarning(wrapper));
     updateBankWarning(wrapper);
     return wrapper;
 }
@@ -120,7 +163,9 @@ function collectCardsFromEditorsRaw() {
 
     const rawCards = Array.from(editors).map((editor, index) => {
         const cardName = editor.querySelector('[data-field="card"]').value;
-        const bank = editor.querySelector('[data-field="bank"]').value;
+        const bankSelect = editor.querySelector('[data-field="bank-select"]');
+        const bankCustom = editor.querySelector('[data-field="bank-custom"]');
+        const bank = bankSelect.value === "__custom__" ? bankCustom.value : bankSelect.value;
         const photoPath = editor.querySelector('[data-field="photoPath"]').value;
         const bonusesRaw = editor.querySelector('[data-field="bonuses"]').value.trim();
 
@@ -158,7 +203,11 @@ function validateFromEditors() {
 async function refreshKnownBanks() {
     const rawBanks = await dsLoadDataset(banksStorageKey, "./database/bankData.json");
     const banks = dsNormalizeBanksForRuntime(rawBanks);
-    knownBankKeys = new Set(banks.map((bank) => dsNormalizeBankName(bank.name)));
+    knownBanks = banks.map((bank) => ({
+        key: dsNormalizeBankName(bank.key),
+        label: bank.label,
+    }));
+    knownBankKeys = new Set(knownBanks.map((bank) => bank.key));
 }
 
 async function loadCards() {

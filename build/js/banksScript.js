@@ -20,15 +20,22 @@ function setMessage(text, isError) {
     messageEl.className = `message ${isError ? "error" : "success"}`;
 }
 
-function createBankRow(bank = { name: "", type: "", value: 1 }) {
+function createBankRow(bank = { key: "", label: "", type: "", value: 1 }) {
     const tr = document.createElement("tr");
 
-    const nameTd = document.createElement("td");
-    const nameInput = document.createElement("input");
-    nameInput.type = "text";
-    nameInput.dataset.field = "name";
-    nameInput.value = bank.name || "";
-    nameTd.appendChild(nameInput);
+    const keyTd = document.createElement("td");
+    const keyInput = document.createElement("input");
+    keyInput.type = "text";
+    keyInput.dataset.field = "key";
+    keyInput.value = bank.key || "";
+    keyTd.appendChild(keyInput);
+
+    const labelTd = document.createElement("td");
+    const labelInput = document.createElement("input");
+    labelInput.type = "text";
+    labelInput.dataset.field = "label";
+    labelInput.value = bank.label || "";
+    labelTd.appendChild(labelInput);
 
     const typeTd = document.createElement("td");
     const typeInput = document.createElement("input");
@@ -45,7 +52,8 @@ function createBankRow(bank = { name: "", type: "", value: 1 }) {
     valueInput.value = typeof bank.value === "number" && Number.isFinite(bank.value) ? String(bank.value) : "";
     valueTd.appendChild(valueInput);
 
-    tr.appendChild(nameTd);
+    tr.appendChild(keyTd);
+    tr.appendChild(labelTd);
     tr.appendChild(typeTd);
     tr.appendChild(valueTd);
     return tr;
@@ -59,7 +67,8 @@ function renderBanks(banks) {
 function collectBanksFromTableRaw() {
     const rows = tableBody.querySelectorAll("tr");
     return Array.from(rows).map((row) => ({
-        name: row.querySelector('[data-field="name"]').value,
+        key: row.querySelector('[data-field="key"]').value,
+        label: row.querySelector('[data-field="label"]').value,
         type: row.querySelector('[data-field="type"]').value,
         value: row.querySelector('[data-field="value"]').value,
     }));
@@ -173,7 +182,7 @@ async function syncBanksFromSource() {
 }
 
 addBankButton.addEventListener("click", () => {
-    tableBody.appendChild(createBankRow());
+    tableBody.appendChild(createBankRow({ key: "", label: "", type: "", value: 1 }));
 });
 
 saveBanksButton.addEventListener("click", saveBanks);

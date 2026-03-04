@@ -49,14 +49,15 @@ function sortBonuses(bonuses) {
 
 function getBankDetails(bankName, bankData) {
     const normalizedCardBank = dsNormalizeBankName(bankName);
-    const matchedBank = bankData.find((bank) => dsNormalizeBankName(bank.name) === normalizedCardBank);
+    const matchedBank = bankData.find((bank) => dsNormalizeBankName(bank.key) === normalizedCardBank);
 
     if (matchedBank) {
         return {
             multiplier: matchedBank.value,
             type: matchedBank.type,
             unknownBank: false,
-            displayName: matchedBank.name,
+            displayName: matchedBank.label || matchedBank.key,
+            key: matchedBank.key,
         };
     }
 
@@ -65,6 +66,7 @@ function getBankDetails(bankName, bankData) {
         type: "Cash Back",
         unknownBank: true,
         displayName: String(bankName || "").trim(),
+        key: String(bankName || "").trim(),
     };
 }
 
@@ -136,6 +138,7 @@ function showBestCard(bonus, cardData, bankData) {
                 source: hasCategoryBonus ? "category" : "default",
                 unknownBank: bankDetails.unknownBank,
                 unknownBankName: bankDetails.displayName,
+                bankKey: bankDetails.key,
             };
         })
         .filter(Boolean)
@@ -186,13 +189,16 @@ function showBestCard(bonus, cardData, bankData) {
         popupContent.appendChild(image);
         popupContent.appendChild(title);
         popupContent.appendChild(createInfoLine(`Rank: #${currentIndex + 1} of ${relevantCards.length}`));
-        popupContent.appendChild(createInfoLine(`Bank: ${card.bank}`));
+        popupContent.appendChild(createInfoLine(`Bank: ${card.unknownBank ? card.bank : card.unknownBankName}`));
+        if (!card.unknownBank && card.bankKey && card.bankKey !== card.unknownBankName) {
+            popupContent.appendChild(createInfoLine(`Bank Key: ${card.bankKey}`));
+        }
         popupContent.appendChild(createInfoLine(`Bonus: ${card.appliedBonus.toFixed(1)}x on ${normalizedBonus.replace(/_/g, " ")}`));
         popupContent.appendChild(createInfoLine(`Current Value: ${card.weightedValue.toFixed(2)} (${card.bankType} @ ${card.bankMultiplier.toFixed(2)}x)`));
         popupContent.appendChild(createInfoLine(`Source: ${card.source === "category" ? "Category bonus" : "Default bonus"}`));
 
         if (card.unknownBank) {
-            const warning = createInfoLine(`Unknown bank: ${card.unknownBankName || card.bank} (using multiplier 1)`);
+            const warning = createInfoLine(`Unknown bank key: ${card.bank} (using multiplier 1)`);
             warning.className = "popup-warning";
             popupContent.appendChild(warning);
         }

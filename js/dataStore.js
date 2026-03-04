@@ -38,6 +38,27 @@ function normalizeBankName(name) {
         .replace(/\s+/g, " ");
 }
 
+function normalizeBankKey(raw) {
+    return normalizeBonusKey(raw);
+}
+
+function prettyLabelFromKey(raw) {
+    const text = String(raw || "").trim();
+    if (!text) return "";
+
+    const withSpaces = text
+        .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    return withSpaces
+        .split(" ")
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(" ");
+}
+
 function toFiniteNumber(value) {
     const num = typeof value === "number" ? value : Number(value);
     return Number.isFinite(num) ? num : null;
@@ -49,10 +70,13 @@ function validateAndNormalizeBanks(payload) {
         return { ok: false, data: [], errors: ["Bank data must be an array."] };
     }
 
+    const seenKeys = new Map();
+
     const data = payload.map((bank, index) => {
         const row = index + 1;
         const normalized = {
-            name: "",
+            key: "",
+            label: "",
             type: "",
             value: 1,
         };
@@ -62,11 +86,22 @@ function validateAndNormalizeBanks(payload) {
             return normalized;
         }
 
-        normalized.name = String(bank.name ?? "").trim();
+        const rawKey = String(bank.key ?? bank.name ?? "").trim();
+        normalized.key = normalizeBankKey(rawKey);
+        normalized.label = String(bank.label ?? prettyLabelFromKey(rawKey)).trim();
         normalized.type = String(bank.type ?? "").trim();
 
-        if (!normalized.name) errors.push(`Row ${row}: name is required.`);
+        if (!normalized.key) errors.push(`Row ${row}: bank key is required.`);
+        if (!normalized.label) errors.push(`Row ${row}: bank label is required.`);
         if (!normalized.type) errors.push(`Row ${row}: reward type is required.`);
+
+        if (normalized.key) {
+            if (seenKeys.has(normalized.key)) {
+                errors.push(`Row ${row}: duplicate bank key "${normalized.key}".`);
+            } else {
+                seenKeys.set(normalized.key, row);
+            }
+        }
 
         const rawValue = bank.value;
         const isBlankValue = rawValue === "" || rawValue === null || typeof rawValue === "undefined";
@@ -92,19 +127,29 @@ function validateAndNormalizeBanks(payload) {
 function normalizeBanksForRuntime(payload) {
     if (!Array.isArray(payload)) return [];
 
+    const seen = new Set();
+
     return payload
         .filter((bank) => bank && typeof bank === "object")
         .map((bank) => {
-            const name = String(bank.name ?? "").trim();
+            const rawKey = String(bank.key ?? bank.name ?? "").trim();
+            const key = normalizeBankKey(rawKey);
+            const label = String(bank.label ?? prettyLabelFromKey(rawKey)).trim() || prettyLabelFromKey(rawKey);
             const type = String(bank.type ?? "").trim() || "Cash Back";
             const parsed = toFiniteNumber(bank.value);
             return {
-                name,
+                key,
+                label,
                 type,
                 value: parsed === null || parsed < 0 ? 1 : parsed,
             };
         })
-        .filter((bank) => bank.name);
+        .filter((bank) => bank.key)
+        .filter((bank) => {
+            if (seen.has(bank.key)) return false;
+            seen.add(bank.key);
+            return true;
+        });
 }
 
 function validateAndNormalizeCards(payload) {
@@ -229,6 +274,8 @@ window.CCDataStore = {
     writeLocalJson,
     normalizeBonusKey,
     normalizeBankName,
+    normalizeBankKey,
+    prettyLabelFromKey,
     validateAndNormalizeBanks,
     validateAndNormalizeCards,
     normalizeBanksForRuntime,
