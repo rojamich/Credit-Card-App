@@ -81,6 +81,11 @@ function renderBonuses(bonuses, cardData, bankData) {
 
 // Show the best card for the selected category
 function showBestCard(bonus, cardData, bankData) {
+    const existingPopup = document.querySelector('.popup');
+    if (existingPopup) {
+        existingPopup.remove();
+    }
+
     const relevantCards = cardData
         .map(card => {
             const cardBonus = card.bonuses[bonus] || card.bonuses.default; // Fallback to Default bonus
@@ -109,6 +114,8 @@ function showBestCard(bonus, cardData, bankData) {
     // Create and display the popup
     const popup = document.createElement('div');
     popup.className = 'popup';
+    popup.setAttribute('role', 'dialog');
+    popup.setAttribute('aria-modal', 'true');
 
     // Function to update popup content dynamically
     const updatePopupContent = () => {
@@ -122,38 +129,34 @@ function showBestCard(bonus, cardData, bankData) {
                 <p>Bonus: ${card.originalBonus.toFixed(1)}x on ${bonus}</p>
                 <p>Valued at ${card.weightedBonus.toFixed(2)} ${card.bankType}</p>
                 <div class="popup-buttons">
-                    <button id="prev-card-button">Previous Card</button>
-                    <button id="next-card-button">Next Best Card</button>
-                    <button id="close-popup-button">Close</button>
+                    <button type="button" data-action="prev">Previous Card</button>
+                    <button type="button" data-action="next">Next Best Card</button>
+                    <button type="button" data-action="close">Close</button>
                 </div>
             </div>
         `;
-
-        // Attach event listeners for the buttons
-        const prevButton = document.getElementById('prev-card-button');
-        const nextButton = document.getElementById('next-card-button');
-        const closeButton = document.getElementById('close-popup-button');
-
-        if (prevButton) {
-            prevButton.addEventListener('click', () => {
-                currentIndex = (currentIndex - 1 + relevantCards.length) % relevantCards.length;
-                updatePopupContent(); // Update popup with the previous card
-            });
-        }
-
-        if (nextButton) {
-            nextButton.addEventListener('click', () => {
-                currentIndex = (currentIndex + 1) % relevantCards.length;
-                updatePopupContent(); // Update popup with the next card
-            });
-        }
-
-        if (closeButton) {
-            closeButton.addEventListener('click', () => {
-                if (popup.parentNode) popup.parentNode.removeChild(popup);
-            });
-        }
     };
+
+    popup.addEventListener('click', (event) => {
+        // Click outside popup content closes the modal.
+        if (event.target === popup) {
+            popup.remove();
+            return;
+        }
+
+        const action = event.target.closest('button')?.dataset?.action;
+        if (!action) return;
+
+        if (action === 'prev') {
+            currentIndex = (currentIndex - 1 + relevantCards.length) % relevantCards.length;
+            updatePopupContent();
+        } else if (action === 'next') {
+            currentIndex = (currentIndex + 1) % relevantCards.length;
+            updatePopupContent();
+        } else if (action === 'close') {
+            popup.remove();
+        }
+    });
 
     updatePopupContent();
     document.body.appendChild(popup);
