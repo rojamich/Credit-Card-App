@@ -1,14 +1,9 @@
 // Fetch data and render unique bonuses
 async function fetchAndRenderBonuses() {
     try {
-        const [cardResponse, bankResponse] = await Promise.all([
-            fetch('./database/cardsData.json'),
-            fetch('./database/bankData.json'),
-        ]);
-        if (!cardResponse.ok || !bankResponse.ok) throw new Error("Failed to fetch card or bank data.");
         const [cardData, bankData] = await Promise.all([
-            cardResponse.json(),
-            bankResponse.json(),
+            window.CCDataStore.loadDataset(window.CCDataStore.CARDS_STORAGE_KEY, './database/cardsData.json'),
+            window.CCDataStore.loadDataset(window.CCDataStore.BANKS_STORAGE_KEY, './database/bankData.json'),
         ]);
 
         const uniqueBonuses = extractUniqueBonuses(cardData);

@@ -11,6 +11,7 @@
 
 .actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     margin: 16px 0;
 }
@@ -102,4 +103,8 @@
     min-height: 96px;
     resize: vertical;
     font-family: Consolas, "Courier New", monospace;
+}
+
+.hidden-file-input {
+    display: none;
 }

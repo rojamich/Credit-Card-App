@@ -6,6 +6,9 @@
     <title>Bank Data</title>
     <link rel="stylesheet" href="./styles/mainStyle.css">
     <link rel="stylesheet" href="./styles/adminStyle.css">
+    <link rel="icon" href="./logo/wallet.png" type="image/png">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0b57d0">
 </head>
 <body>
     <header>
@@ -25,11 +28,15 @@
 
     <main class="admin-page">
         <h2>Bank Values</h2>
-        <p class="help-text">Edit reward types/values used to rank cards. Use decimal values (example: 2.15).</p>
+        <p class="help-text">Edit reward types/values used to rank cards. Data is saved locally on this device. Use decimal values (example: 2.15).</p>
 
         <div class="actions">
             <button id="add-bank-button" type="button">Add Bank</button>
             <button id="save-banks-button" type="button">Save All Banks</button>
+            <button id="export-banks-button" type="button">Export Banks</button>
+            <button id="import-banks-button" type="button">Import Banks</button>
+            <button id="sync-banks-button" type="button">Sync From Online Source</button>
+            <input id="import-banks-file" type="file" accept="application/json" class="hidden-file-input">
         </div>
 
         <div id="banks-message" class="message" aria-live="polite"></div>
@@ -48,6 +55,8 @@
         </div>
     </main>
 
+    <script src="./js/dataStore.js"></script>
     <script src="./js/banksScript.js"></script>
+    <script src="./js/registerSw.js"></script>
 </body>
 </html>
