@@ -33,6 +33,7 @@
 .message {
     min-height: 24px;
     font-weight: 700;
+    white-space: pre-line;
 }
 
 .message.error {
@@ -103,6 +104,17 @@
     min-height: 96px;
     resize: vertical;
     font-family: Consolas, "Courier New", monospace;
+}
+
+.card-warning {
+    margin: 0;
+    font-size: 13px;
+    color: #8a5a00;
+    display: none;
+}
+
+.card-warning.active {
+    display: block;
 }
 
 .hidden-file-input {

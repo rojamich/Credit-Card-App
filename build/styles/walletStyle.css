@@ -106,3 +106,8 @@
 .popup-buttons button:hover {
     background-color: #0056b3;
 }
+
+.popup-warning {
+    color: #8a5a00;
+    font-weight: 700;
+}

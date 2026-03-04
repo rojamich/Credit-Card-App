@@ -6,76 +6,134 @@ const exportCardsButton = document.getElementById("export-cards-button");
 const importCardsButton = document.getElementById("import-cards-button");
 const syncCardsButton = document.getElementById("sync-cards-button");
 const importCardsFile = document.getElementById("import-cards-file");
+
 const {
     CARDS_STORAGE_KEY: cardsStorageKey,
+    BANKS_STORAGE_KEY: banksStorageKey,
     loadDataset: dsLoadDataset,
     writeLocalJson: dsWriteLocalJson,
+    validateAndNormalizeCards: dsValidateAndNormalizeCards,
+    normalizeCardsForRuntime: dsNormalizeCardsForRuntime,
+    normalizeBanksForRuntime: dsNormalizeBanksForRuntime,
+    normalizeBankName: dsNormalizeBankName,
 } = window.CCDataStore;
+
+let knownBankKeys = new Set();
 
 function setMessage(text, isError) {
     messageEl.textContent = text;
     messageEl.className = `message ${isError ? "error" : "success"}`;
 }
 
+function formatErrors(prefix, errors) {
+    return `${prefix}\n${errors.map((error) => `- ${error}`).join("\n")}`;
+}
+
 function formatBonuses(bonuses) {
     return JSON.stringify(bonuses, null, 2);
 }
 
-function createCardEditor(card = { card: "", bank: "", photoPath: "", bonuses: { default: 1 } }) {
+function updateBankWarning(editor) {
+    const bankInput = editor.querySelector('[data-field="bank"]');
+    const warning = editor.querySelector('[data-role="bank-warning"]');
+    const bankKey = dsNormalizeBankName(bankInput.value);
+
+    if (!bankKey || knownBankKeys.has(bankKey)) {
+        warning.textContent = "";
+        warning.classList.remove("active");
+        return;
+    }
+
+    warning.textContent = `Unknown bank "${bankInput.value.trim()}" (wallet will use multiplier 1).`;
+    warning.classList.add("active");
+}
+
+function createFieldLabel(text) {
+    const label = document.createElement("label");
+    label.textContent = text;
+    return label;
+}
+
+function createCardEditor(card = { card: "", bank: "", photoPath: "", bonuses: { default: 1 } }, index = 0) {
     const wrapper = document.createElement("section");
     wrapper.className = "card-editor";
 
-    wrapper.innerHTML = `
-        <h3>Card</h3>
-        <div class="card-fields">
-            <label>Card Name</label>
-            <input type="text" data-field="card" value="${card.card}">
+    const title = document.createElement("h3");
+    title.textContent = `Card ${index + 1}`;
+    wrapper.appendChild(title);
 
-            <label>Bank Name Key</label>
-            <input type="text" data-field="bank" value="${card.bank}">
+    const fields = document.createElement("div");
+    fields.className = "card-fields";
 
-            <label>Photo URL</label>
-            <input type="text" data-field="photoPath" value="${card.photoPath}">
+    const cardLabel = createFieldLabel("Card Name");
+    const cardInput = document.createElement("input");
+    cardInput.type = "text";
+    cardInput.dataset.field = "card";
+    cardInput.value = card.card || "";
 
-            <label>Bonuses JSON</label>
-            <textarea data-field="bonuses">${formatBonuses(card.bonuses)}</textarea>
-        </div>
-    `;
+    const bankLabel = createFieldLabel("Bank Name Key");
+    const bankInput = document.createElement("input");
+    bankInput.type = "text";
+    bankInput.dataset.field = "bank";
+    bankInput.value = card.bank || "";
 
+    const bankWarning = document.createElement("p");
+    bankWarning.className = "card-warning";
+    bankWarning.dataset.role = "bank-warning";
+
+    const photoLabel = createFieldLabel("Photo URL");
+    const photoInput = document.createElement("input");
+    photoInput.type = "text";
+    photoInput.dataset.field = "photoPath";
+    photoInput.value = card.photoPath || "";
+
+    const bonusesLabel = createFieldLabel("Bonuses JSON");
+    const bonusesTextarea = document.createElement("textarea");
+    bonusesTextarea.dataset.field = "bonuses";
+    bonusesTextarea.value = formatBonuses(card.bonuses || { default: 1 });
+
+    fields.appendChild(cardLabel);
+    fields.appendChild(cardInput);
+    fields.appendChild(bankLabel);
+    fields.appendChild(bankInput);
+    fields.appendChild(bankWarning);
+    fields.appendChild(photoLabel);
+    fields.appendChild(photoInput);
+    fields.appendChild(bonusesLabel);
+    fields.appendChild(bonusesTextarea);
+
+    wrapper.appendChild(fields);
+
+    bankInput.addEventListener("input", () => updateBankWarning(wrapper));
+    updateBankWarning(wrapper);
     return wrapper;
 }
 
-async function loadCards() {
-    setMessage("Loading card data...", false);
-    try {
-        const cards = await dsLoadDataset(cardsStorageKey, "./database/cardsData.json");
-
-        cardsContainer.innerHTML = "";
-        cards.forEach((card) => cardsContainer.appendChild(createCardEditor(card)));
-        setMessage("Card data loaded from device storage.", false);
-    } catch (error) {
-        setMessage(`Could not load card data: ${error.message}`, true);
-    }
+function renderCards(cards) {
+    cardsContainer.innerHTML = "";
+    cards.forEach((card, index) => cardsContainer.appendChild(createCardEditor(card, index)));
 }
 
-function collectCardsFromEditors() {
+function collectCardsFromEditorsRaw() {
     const editors = cardsContainer.querySelectorAll(".card-editor");
+    const errors = [];
 
-    return Array.from(editors).map((editor, index) => {
-        const cardName = editor.querySelector('[data-field="card"]').value.trim();
-        const bank = editor.querySelector('[data-field="bank"]').value.trim();
-        const photoPath = editor.querySelector('[data-field="photoPath"]').value.trim();
+    const rawCards = Array.from(editors).map((editor, index) => {
+        const cardName = editor.querySelector('[data-field="card"]').value;
+        const bank = editor.querySelector('[data-field="bank"]').value;
+        const photoPath = editor.querySelector('[data-field="photoPath"]').value;
         const bonusesRaw = editor.querySelector('[data-field="bonuses"]').value.trim();
 
-        let bonuses;
-        try {
-            bonuses = JSON.parse(bonusesRaw);
-        } catch (error) {
-            throw new Error(`Invalid bonuses JSON at card #${index + 1}.`);
-        }
-
-        if (!bonuses || typeof bonuses !== "object" || Array.isArray(bonuses)) {
-            throw new Error(`Bonuses must be an object at card #${index + 1}.`);
+        let bonuses = {};
+        if (!bonusesRaw) {
+            bonuses = {};
+        } else {
+            try {
+                bonuses = JSON.parse(bonusesRaw);
+            } catch (error) {
+                errors.push(`Card ${index + 1}: bonuses must be valid JSON.`);
+                bonuses = {};
+            }
         }
 
         return {
@@ -85,30 +143,47 @@ function collectCardsFromEditors() {
             bonuses,
         };
     });
+
+    return { rawCards, errors };
 }
 
-function isValidCardsPayload(payload) {
-    if (!Array.isArray(payload)) return false;
-    return payload.every((card) => {
-        if (!card || typeof card !== "object") return false;
-        if (typeof card.card !== "string" || typeof card.bank !== "string" || typeof card.photoPath !== "string") {
-            return false;
-        }
-        if (!card.bonuses || typeof card.bonuses !== "object" || Array.isArray(card.bonuses)) {
-            return false;
-        }
-        return Object.values(card.bonuses).every((value) => typeof value === "number" && Number.isFinite(value));
-    });
+function validateFromEditors() {
+    const collected = collectCardsFromEditorsRaw();
+    if (collected.errors.length) {
+        return { ok: false, data: [], errors: collected.errors };
+    }
+    return dsValidateAndNormalizeCards(collected.rawCards);
+}
+
+async function refreshKnownBanks() {
+    const rawBanks = await dsLoadDataset(banksStorageKey, "./database/bankData.json");
+    const banks = dsNormalizeBanksForRuntime(rawBanks);
+    knownBankKeys = new Set(banks.map((bank) => dsNormalizeBankName(bank.name)));
+}
+
+async function loadCards() {
+    setMessage("Loading card data...", false);
+    try {
+        await refreshKnownBanks();
+        const rawCards = await dsLoadDataset(cardsStorageKey, "./database/cardsData.json");
+        const cards = dsNormalizeCardsForRuntime(rawCards);
+        renderCards(cards);
+        setMessage("Card data loaded from device storage.", false);
+    } catch (error) {
+        setMessage(`Could not load card data: ${error.message}`, true);
+    }
 }
 
 function saveCards() {
-    try {
-        const payload = collectCardsFromEditors();
-        dsWriteLocalJson(cardsStorageKey, payload);
-        setMessage("Card data saved locally on this device.", false);
-    } catch (error) {
-        setMessage(error.message, true);
+    const validation = validateFromEditors();
+    if (!validation.ok) {
+        setMessage(formatErrors("Save blocked. Fix these card entries:", validation.errors), true);
+        return;
     }
+
+    dsWriteLocalJson(cardsStorageKey, validation.data);
+    renderCards(validation.data);
+    setMessage("Card data saved locally on this device.", false);
 }
 
 function downloadJson(filename, data) {
@@ -124,13 +199,14 @@ function downloadJson(filename, data) {
 }
 
 function exportCards() {
-    try {
-        const payload = collectCardsFromEditors();
-        downloadJson("cardsData-export.json", payload);
-        setMessage("Cards exported.", false);
-    } catch (error) {
-        setMessage(error.message, true);
+    const validation = validateFromEditors();
+    if (!validation.ok) {
+        setMessage(formatErrors("Export blocked. Fix these card entries:", validation.errors), true);
+        return;
     }
+
+    downloadJson("cardsData-export.json", validation.data);
+    setMessage("Cards exported.", false);
 }
 
 function importCardsFromFile(event) {
@@ -141,13 +217,14 @@ function importCardsFromFile(event) {
     reader.onload = () => {
         try {
             const parsed = JSON.parse(reader.result);
-            if (!isValidCardsPayload(parsed)) {
-                throw new Error("Invalid cards JSON format.");
+            const validation = dsValidateAndNormalizeCards(parsed);
+            if (!validation.ok) {
+                setMessage(formatErrors("Import blocked. Fix these card entries:", validation.errors), true);
+                return;
             }
 
-            dsWriteLocalJson(cardsStorageKey, parsed);
-            cardsContainer.innerHTML = "";
-            parsed.forEach((card) => cardsContainer.appendChild(createCardEditor(card)));
+            dsWriteLocalJson(cardsStorageKey, validation.data);
+            renderCards(validation.data);
             setMessage("Cards imported and saved locally.", false);
         } catch (error) {
             setMessage(`Import failed: ${error.message}`, true);
@@ -168,12 +245,15 @@ async function syncCardsFromSource() {
     try {
         const response = await fetch(`./database/cardsData.json?ts=${Date.now()}`, { cache: "no-store" });
         if (!response.ok) throw new Error("Could not fetch online card data.");
-        const cards = await response.json();
-        if (!isValidCardsPayload(cards)) throw new Error("Online card data format is invalid.");
+        const parsed = await response.json();
+        const validation = dsValidateAndNormalizeCards(parsed);
+        if (!validation.ok) {
+            setMessage(formatErrors("Sync blocked. Source card data is invalid:", validation.errors), true);
+            return;
+        }
 
-        dsWriteLocalJson(cardsStorageKey, cards);
-        cardsContainer.innerHTML = "";
-        cards.forEach((card) => cardsContainer.appendChild(createCardEditor(card)));
+        dsWriteLocalJson(cardsStorageKey, validation.data);
+        renderCards(validation.data);
         setMessage("Cards synced from online source and saved locally.", false);
     } catch (error) {
         setMessage(`Sync failed: ${error.message}`, true);
@@ -181,7 +261,7 @@ async function syncCardsFromSource() {
 }
 
 addCardButton.addEventListener("click", () => {
-    cardsContainer.appendChild(createCardEditor());
+    cardsContainer.appendChild(createCardEditor({ card: "", bank: "", photoPath: "", bonuses: { default: 1 } }, cardsContainer.children.length));
 });
 
 saveCardsButton.addEventListener("click", saveCards);
