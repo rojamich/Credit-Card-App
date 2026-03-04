@@ -6,7 +6,11 @@ const exportCardsButton = document.getElementById("export-cards-button");
 const importCardsButton = document.getElementById("import-cards-button");
 const syncCardsButton = document.getElementById("sync-cards-button");
 const importCardsFile = document.getElementById("import-cards-file");
-const { CARDS_STORAGE_KEY, loadDataset, writeLocalJson } = window.CCDataStore;
+const {
+    CARDS_STORAGE_KEY: cardsStorageKey,
+    loadDataset,
+    writeLocalJson,
+} = window.CCDataStore;
 
 function setMessage(text, isError) {
     messageEl.textContent = text;
@@ -44,7 +48,7 @@ function createCardEditor(card = { card: "", bank: "", photoPath: "", bonuses: {
 async function loadCards() {
     setMessage("Loading card data...", false);
     try {
-        const cards = await loadDataset(CARDS_STORAGE_KEY, "./database/cardsData.json");
+        const cards = await loadDataset(cardsStorageKey, "./database/cardsData.json");
 
         cardsContainer.innerHTML = "";
         cards.forEach((card) => cardsContainer.appendChild(createCardEditor(card)));
@@ -100,7 +104,7 @@ function isValidCardsPayload(payload) {
 function saveCards() {
     try {
         const payload = collectCardsFromEditors();
-        writeLocalJson(CARDS_STORAGE_KEY, payload);
+        writeLocalJson(cardsStorageKey, payload);
         setMessage("Card data saved locally on this device.", false);
     } catch (error) {
         setMessage(error.message, true);
@@ -141,7 +145,7 @@ function importCardsFromFile(event) {
                 throw new Error("Invalid cards JSON format.");
             }
 
-            writeLocalJson(CARDS_STORAGE_KEY, parsed);
+            writeLocalJson(cardsStorageKey, parsed);
             cardsContainer.innerHTML = "";
             parsed.forEach((card) => cardsContainer.appendChild(createCardEditor(card)));
             setMessage("Cards imported and saved locally.", false);
@@ -167,7 +171,7 @@ async function syncCardsFromSource() {
         const cards = await response.json();
         if (!isValidCardsPayload(cards)) throw new Error("Online card data format is invalid.");
 
-        writeLocalJson(CARDS_STORAGE_KEY, cards);
+        writeLocalJson(cardsStorageKey, cards);
         cardsContainer.innerHTML = "";
         cards.forEach((card) => cardsContainer.appendChild(createCardEditor(card)));
         setMessage("Cards synced from online source and saved locally.", false);

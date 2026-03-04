@@ -6,7 +6,11 @@ const exportBanksButton = document.getElementById("export-banks-button");
 const importBanksButton = document.getElementById("import-banks-button");
 const syncBanksButton = document.getElementById("sync-banks-button");
 const importBanksFile = document.getElementById("import-banks-file");
-const { BANKS_STORAGE_KEY, loadDataset, writeLocalJson } = window.CCDataStore;
+const {
+    BANKS_STORAGE_KEY: banksStorageKey,
+    loadDataset,
+    writeLocalJson,
+} = window.CCDataStore;
 
 function setMessage(text, isError) {
     messageEl.textContent = text;
@@ -26,7 +30,7 @@ function createBankRow(bank = { name: "", type: "", value: 1 }) {
 async function loadBanks() {
     setMessage("Loading bank data...", false);
     try {
-        const banks = await loadDataset(BANKS_STORAGE_KEY, "./database/bankData.json");
+        const banks = await loadDataset(banksStorageKey, "./database/bankData.json");
 
         tableBody.innerHTML = "";
         banks.forEach((bank) => tableBody.appendChild(createBankRow(bank)));
@@ -62,7 +66,7 @@ function isValidBanksPayload(payload) {
 function saveBanks() {
     try {
         const payload = collectBanksFromTable();
-        writeLocalJson(BANKS_STORAGE_KEY, payload);
+        writeLocalJson(banksStorageKey, payload);
         setMessage("Bank data saved locally on this device.", false);
     } catch (error) {
         setMessage(error.message, true);
@@ -103,7 +107,7 @@ function importBanksFromFile(event) {
                 throw new Error("Invalid banks JSON format.");
             }
 
-            writeLocalJson(BANKS_STORAGE_KEY, parsed);
+            writeLocalJson(banksStorageKey, parsed);
             tableBody.innerHTML = "";
             parsed.forEach((bank) => tableBody.appendChild(createBankRow(bank)));
             setMessage("Banks imported and saved locally.", false);
@@ -129,7 +133,7 @@ async function syncBanksFromSource() {
         const banks = await response.json();
         if (!isValidBanksPayload(banks)) throw new Error("Online bank data format is invalid.");
 
-        writeLocalJson(BANKS_STORAGE_KEY, banks);
+        writeLocalJson(banksStorageKey, banks);
         tableBody.innerHTML = "";
         banks.forEach((bank) => tableBody.appendChild(createBankRow(bank)));
         setMessage("Banks synced from online source and saved locally.", false);
