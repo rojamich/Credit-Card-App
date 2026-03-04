@@ -1,15 +1,11 @@
 // Fetch data and render unique bonuses
 async function fetchAndRenderBonuses() {
     try {
-        // Fetch the card and bank data
         const [cardResponse, bankResponse] = await Promise.all([
             fetch('./database/cardsData.json'),
             fetch('./database/bankData.json'),
         ]);
-
-        if (!cardResponse.ok || !bankResponse.ok)
-            throw new Error("Failed to fetch card or bank data.");
-
+        if (!cardResponse.ok || !bankResponse.ok) throw new Error("Failed to fetch card or bank data.");
         const [cardData, bankData] = await Promise.all([
             cardResponse.json(),
             bankResponse.json(),
@@ -40,12 +36,6 @@ function sortBonuses(bonuses) {
         if (b === "default") return 1;
         return a.localeCompare(b);
     });
-}
-
-// Get the bank multiplier and type for a given bank
-function getBankDetails(bankName, bankData) {
-    const bank = bankData.find(b => b.name === bankName);
-    return bank ? { multiplier: bank.value, type: bank.type } : { multiplier: 1, type: "cash" }; // Default
 }
 
 // Render bonuses into the DOM
@@ -80,6 +70,11 @@ function renderBonuses(bonuses, cardData, bankData) {
 }
 
 // Show the best card for the selected category
+function getBankDetails(bankName, bankData) {
+    const bank = bankData.find(b => b.name === bankName);
+    return bank ? { multiplier: bank.value, type: bank.type } : { multiplier: 1, type: "Cash Back" };
+}
+
 function showBestCard(bonus, cardData, bankData) {
     const existingPopup = document.querySelector('.popup');
     if (existingPopup) {
@@ -88,21 +83,30 @@ function showBestCard(bonus, cardData, bankData) {
 
     const relevantCards = cardData
         .map(card => {
-            const cardBonus = card.bonuses[bonus] || card.bonuses.default; // Fallback to Default bonus
-            const { multiplier, type } = getBankDetails(card.bank, bankData);
-            const weightedBonus = cardBonus * multiplier;
+            const hasCategoryBonus = Object.prototype.hasOwnProperty.call(card.bonuses, bonus);
+            const appliedBonus = hasCategoryBonus ? card.bonuses[bonus] : card.bonuses.default;
+            if (typeof appliedBonus !== "number") return null;
+            const bankDetails = getBankDetails(card.bank, bankData);
+            const weightedValue = appliedBonus * bankDetails.multiplier;
 
             return {
                 card: card.card,
                 bank: card.bank,
                 photoPath: card.photoPath,
-                originalBonus: cardBonus, // Original bonus value
-                weightedBonus, // Weighted bonus value
-                bankType: type, // e.g., "UR points", "cash"
+                appliedBonus,
+                weightedValue,
+                bankType: bankDetails.type,
+                bankMultiplier: bankDetails.multiplier,
+                source: hasCategoryBonus ? "category" : "default",
             };
         })
-        .filter(card => card.weightedBonus) // Ensure valid cards
-        .sort((a, b) => b.weightedBonus - a.weightedBonus); // Sort by weighted bonus value descending
+        .filter(Boolean)
+        .sort((a, b) => {
+            if (b.weightedValue !== a.weightedValue) return b.weightedValue - a.weightedValue;
+            if (b.appliedBonus !== a.appliedBonus) return b.appliedBonus - a.appliedBonus;
+            if (a.source !== b.source) return a.source === "category" ? -1 : 1;
+            return a.card.localeCompare(b.card);
+        });
 
     if (!relevantCards.length) {
         console.warn(`No valid cards found for bonus: ${bonus}`);
@@ -117,49 +121,76 @@ function showBestCard(bonus, cardData, bankData) {
     popup.setAttribute('role', 'dialog');
     popup.setAttribute('aria-modal', 'true');
 
+    const popupContent = document.createElement("div");
+    popupContent.className = "popup-content";
+    popup.appendChild(popupContent);
+
+    const closePopup = () => {
+        document.removeEventListener("keydown", onKeyDown);
+        popup.remove();
+    };
+
+    const onKeyDown = (event) => {
+        if (event.key === "Escape") closePopup();
+    };
+
     // Function to update popup content dynamically
     const updatePopupContent = () => {
         const card = relevantCards[currentIndex];
 
-        popup.innerHTML = `
-            <div class="popup-content">
-                <img src="${card.photoPath}" alt="${card.card}" class="popup-card-image">
-                <h2>${card.card}</h2>
-                <p>Bank: ${card.bank}</p>
-                <p>Bonus: ${card.originalBonus.toFixed(1)}x on ${bonus}</p>
-                <p>Valued at ${card.weightedBonus.toFixed(2)} ${card.bankType}</p>
-                <div class="popup-buttons">
-                    <button type="button" data-action="prev">Previous Card</button>
-                    <button type="button" data-action="next">Next Best Card</button>
-                    <button type="button" data-action="close">Close</button>
-                </div>
+        popupContent.innerHTML = `
+            <img src="${card.photoPath}" alt="${card.card}" class="popup-card-image">
+            <h2>${card.card}</h2>
+            <p>Rank: #${currentIndex + 1} of ${relevantCards.length}</p>
+            <p>Bank: ${card.bank}</p>
+            <p>Bonus: ${card.appliedBonus.toFixed(1)}x on ${bonus.replace(/_/g, " ")}</p>
+            <p>Current Value: ${card.weightedValue.toFixed(2)} (${card.bankType} @ ${card.bankMultiplier.toFixed(2)}x)</p>
+            <p>Source: ${card.source === "category" ? "Category bonus" : "Default bonus"}</p>
+            <div class="popup-buttons">
+                <button type="button" data-action="prev">Previous Card</button>
+                <button type="button" data-action="next">Next Best Card</button>
+                <button type="button" data-action="close">Close</button>
             </div>
         `;
+
+        const prevButton = popupContent.querySelector('[data-action="prev"]');
+        const nextButton = popupContent.querySelector('[data-action="next"]');
+        const closeButton = popupContent.querySelector('[data-action="close"]');
+
+        if (prevButton) {
+            prevButton.onclick = function () {
+                currentIndex = (currentIndex - 1 + relevantCards.length) % relevantCards.length;
+                updatePopupContent();
+            };
+        }
+
+        if (nextButton) {
+            nextButton.onclick = function () {
+                currentIndex = (currentIndex + 1) % relevantCards.length;
+                updatePopupContent();
+            };
+        }
+
+        if (closeButton) {
+            closeButton.onclick = function () {
+                closePopup();
+            };
+        }
     };
 
     popup.addEventListener('click', (event) => {
-        // Click outside popup content closes the modal.
         if (event.target === popup) {
-            popup.remove();
-            return;
+            closePopup();
         }
+    });
 
-        const action = event.target.closest('button')?.dataset?.action;
-        if (!action) return;
-
-        if (action === 'prev') {
-            currentIndex = (currentIndex - 1 + relevantCards.length) % relevantCards.length;
-            updatePopupContent();
-        } else if (action === 'next') {
-            currentIndex = (currentIndex + 1) % relevantCards.length;
-            updatePopupContent();
-        } else if (action === 'close') {
-            popup.remove();
-        }
+    popupContent.addEventListener("click", (event) => {
+        event.stopPropagation();
     });
 
     updatePopupContent();
     document.body.appendChild(popup);
+    document.addEventListener("keydown", onKeyDown);
 }
 
 // Fetch and render bonuses on page load

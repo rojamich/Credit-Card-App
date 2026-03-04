@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wallet</title>
+    <title>Card Data</title>
     <link rel="stylesheet" href="./styles/mainStyle.css">
-    <link rel="stylesheet" href="./styles/walletStyle.css">
-    <link rel="icon" href="./logo/wallet.png" type="image/png">
+    <link rel="stylesheet" href="./styles/adminStyle.css">
 </head>
 <body>
     <header>
@@ -24,8 +23,20 @@
         </nav>
     </header>
 
-    <div class="bonus-container" id="bonus-container"></div>
+    <main class="admin-page">
+        <h2>Cards</h2>
+        <p class="help-text">Edit card details and bonuses JSON. Bonus keys must map to numeric values.</p>
 
-    <script src="./js/walletScript.js"></script>
+        <div class="actions">
+            <button id="add-card-button" type="button">Add Card</button>
+            <button id="save-cards-button" type="button">Save All Cards</button>
+        </div>
+
+        <div id="cards-message" class="message" aria-live="polite"></div>
+
+        <div id="cards-container" class="cards-grid"></div>
+    </main>
+
+    <script src="./js/cardsScript.js"></script>
 </body>
 </html>

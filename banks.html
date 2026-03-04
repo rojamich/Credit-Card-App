@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Data</title>
+    <link rel="stylesheet" href="./styles/mainStyle.css">
+    <link rel="stylesheet" href="./styles/adminStyle.css">
+</head>
+<body>
+    <header>
+        <h1>Card Optimizer</h1>
+        <nav>
+            <ul>
+                <li>
+                    <a href="./index.html">
+                        <img src="./logo/wallet.png" class="header-btn" alt="wallet">
+                    </a>
+                </li>
+                <li><a class="nav-link" href="./banks.html">Banks</a></li>
+                <li><a class="nav-link" href="./cards.html">Cards</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="admin-page">
+        <h2>Bank Values</h2>
+        <p class="help-text">Edit reward types/values used to rank cards. Use decimal values (example: 2.15).</p>
+
+        <div class="actions">
+            <button id="add-bank-button" type="button">Add Bank</button>
+            <button id="save-banks-button" type="button">Save All Banks</button>
+        </div>
+
+        <div id="banks-message" class="message" aria-live="polite"></div>
+
+        <div class="table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Reward Type</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody id="banks-table-body"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="./js/banksScript.js"></script>
+</body>
+</html>

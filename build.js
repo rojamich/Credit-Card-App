@@ -4,7 +4,7 @@ const path = require("path");
 // Paths
 const buildDir = path.join(__dirname, "build");
 const assetDirs = ["styles", "js", "database", "logo"];
-const rootFiles = ["index.html", "404.html"];
+const rootFiles = ["index.html", "404.html", "banks.html", "cards.html"];
 
 // Recreate build directory to avoid stale/duplicated output
 if (fs.existsSync(buildDir)) {

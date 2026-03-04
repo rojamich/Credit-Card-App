@@ -1,0 +1,105 @@
+.admin-page {
+    max-width: 1100px;
+    margin: 24px auto;
+    padding: 0 16px 24px;
+}
+
+.help-text {
+    margin-top: 8px;
+    color: #333;
+}
+
+.actions {
+    display: flex;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.actions button {
+    background: #0b57d0;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.actions button:hover {
+    background: #0848ad;
+}
+
+.message {
+    min-height: 24px;
+    font-weight: 700;
+}
+
+.message.error {
+    color: #b00020;
+}
+
+.message.success {
+    color: #0f7a30;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.admin-table th,
+.admin-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+.admin-table th {
+    background: #f5f5f5;
+}
+
+.admin-table input,
+.card-editor input,
+.card-editor textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.cards-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.card-editor {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px;
+    background: #fff;
+}
+
+.card-editor h3 {
+    margin: 0 0 8px;
+}
+
+.card-fields {
+    display: grid;
+    gap: 8px;
+}
+
+.card-fields label {
+    font-weight: 700;
+}
+
+.card-fields textarea {
+    min-height: 96px;
+    resize: vertical;
+    font-family: Consolas, "Courier New", monospace;
+}

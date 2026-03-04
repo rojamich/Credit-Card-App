@@ -24,7 +24,7 @@ header {
   }
   
   /* items */
-  nav ul li {
+nav ul li {
     margin: 0 15px;
   }
 
@@ -32,5 +32,15 @@ header {
   width: 40px;
   height: 40px;
   cursor: pointer;
+}
+
+.nav-link {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.nav-link:hover {
+  text-decoration: underline;
 }
   
