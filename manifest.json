@@ -1,7 +1,9 @@
 {
   "name": "Card Optimizer",
   "short_name": "CardOpt",
+  "id": "./index.html",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0b57d0",
