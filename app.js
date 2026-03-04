@@ -1,9 +1,9 @@
 // Setup
-const fs = require("fs");
 const express = require("express");
 const path = require("path");
 const app = express();
 app.use(express.json());
+app.use(express.static(__dirname));
 const port = process.env.PORT || 3000;
 
 // Middleware to log incoming requests
@@ -35,6 +35,6 @@ app.get("*", (req, res) => {
 });
 
 // Start the server
-const server = app.listen(port, () => {
+app.listen(port, () => {
     console.log(`Card Optimizer listening on port ${port}!`);
 });

@@ -3,16 +3,19 @@ const path = require("path");
 
 // Paths
 const buildDir = path.join(__dirname, "build");
-const staticDir = path.join(__dirname, "static");
-const destStaticDir = path.join(buildDir, "static");
+const assetDirs = ["styles", "js", "database", "logo"];
+const rootFiles = ["index.html", "404.html"];
 
-// Create the build directory if it doesn't exist
-if (!fs.existsSync(buildDir)) {
-    fs.mkdirSync(buildDir);
+// Recreate build directory to avoid stale/duplicated output
+if (fs.existsSync(buildDir)) {
+    fs.rmSync(buildDir, { recursive: true, force: true });
 }
+fs.mkdirSync(buildDir, { recursive: true });
 
-// Copy the "static" directory to the "build" directory
+// Copy a source folder recursively to destination
 const copyFolderSync = (source, destination) => {
+    if (!fs.existsSync(source)) return;
+
     if (!fs.existsSync(destination)) {
         fs.mkdirSync(destination, { recursive: true });
     }
@@ -29,7 +32,19 @@ const copyFolderSync = (source, destination) => {
     });
 };
 
-// Copy static folder
-copyFolderSync(staticDir, destStaticDir);
+// Copy source asset directories
+assetDirs.forEach((dir) => {
+    const source = path.join(__dirname, dir);
+    const destination = path.join(buildDir, dir);
+    copyFolderSync(source, destination);
+});
 
-console.log("Build directory created and static files copied successfully!");
+// Copy top-level HTML files
+rootFiles.forEach((file) => {
+    const source = path.join(__dirname, file);
+    if (fs.existsSync(source)) {
+        fs.copyFileSync(source, path.join(buildDir, file));
+    }
+});
+
+console.log("Build output generated successfully.");

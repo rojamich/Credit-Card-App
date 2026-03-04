@@ -51,6 +51,9 @@ function getBankDetails(bankName, bankData) {
 // Render bonuses into the DOM
 function renderBonuses(bonuses, cardData, bankData) {
     const container = document.getElementById('bonus-container');
+    if (!container) return;
+
+    container.innerHTML = "";
 
     bonuses.forEach(bonus => {
         const box = document.createElement('div');
@@ -68,7 +71,7 @@ function renderBonuses(bonuses, cardData, bankData) {
 
         const name = document.createElement('span');
         name.className = 'bonus-name';
-        name.textContent = bonus;
+        name.textContent = bonus.replace(/_/g, " ");
 
         box.appendChild(logo);
         box.appendChild(name);
@@ -96,6 +99,11 @@ function showBestCard(bonus, cardData, bankData) {
         .filter(card => card.weightedBonus) // Ensure valid cards
         .sort((a, b) => b.weightedBonus - a.weightedBonus); // Sort by weighted bonus value descending
 
+    if (!relevantCards.length) {
+        console.warn(`No valid cards found for bonus: ${bonus}`);
+        return;
+    }
+
     let currentIndex = 0;
 
     // Create and display the popup
@@ -122,31 +130,29 @@ function showBestCard(bonus, cardData, bankData) {
         `;
 
         // Attach event listeners for the buttons
-        setTimeout(() => {
-            const prevButton = document.getElementById('prev-card-button');
-            const nextButton = document.getElementById('next-card-button');
-            const closeButton = document.getElementById('close-popup-button');
+        const prevButton = document.getElementById('prev-card-button');
+        const nextButton = document.getElementById('next-card-button');
+        const closeButton = document.getElementById('close-popup-button');
 
-            if (prevButton) {
-                prevButton.addEventListener('click', () => {
-                    currentIndex = (currentIndex - 1 + relevantCards.length) % relevantCards.length;
-                    updatePopupContent(); // Update popup with the previous card
-                });
-            }
+        if (prevButton) {
+            prevButton.addEventListener('click', () => {
+                currentIndex = (currentIndex - 1 + relevantCards.length) % relevantCards.length;
+                updatePopupContent(); // Update popup with the previous card
+            });
+        }
 
-            if (nextButton) {
-                nextButton.addEventListener('click', () => {
-                    currentIndex = (currentIndex + 1) % relevantCards.length;
-                    updatePopupContent(); // Update popup with the next card
-                });
-            }
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                currentIndex = (currentIndex + 1) % relevantCards.length;
+                updatePopupContent(); // Update popup with the next card
+            });
+        }
 
-            if (closeButton) {
-                closeButton.addEventListener('click', () => {
-                    if (popup.parentNode) popup.parentNode.removeChild(popup);
-                });
-            }
-        }, 0);
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                if (popup.parentNode) popup.parentNode.removeChild(popup);
+            });
+        }
     };
 
     updatePopupContent();
