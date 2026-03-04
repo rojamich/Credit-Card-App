@@ -8,8 +8,8 @@ const syncCardsButton = document.getElementById("sync-cards-button");
 const importCardsFile = document.getElementById("import-cards-file");
 const {
     CARDS_STORAGE_KEY: cardsStorageKey,
-    loadDataset,
-    writeLocalJson,
+    loadDataset: dsLoadDataset,
+    writeLocalJson: dsWriteLocalJson,
 } = window.CCDataStore;
 
 function setMessage(text, isError) {
@@ -48,7 +48,7 @@ function createCardEditor(card = { card: "", bank: "", photoPath: "", bonuses: {
 async function loadCards() {
     setMessage("Loading card data...", false);
     try {
-        const cards = await loadDataset(cardsStorageKey, "./database/cardsData.json");
+        const cards = await dsLoadDataset(cardsStorageKey, "./database/cardsData.json");
 
         cardsContainer.innerHTML = "";
         cards.forEach((card) => cardsContainer.appendChild(createCardEditor(card)));
@@ -104,7 +104,7 @@ function isValidCardsPayload(payload) {
 function saveCards() {
     try {
         const payload = collectCardsFromEditors();
-        writeLocalJson(cardsStorageKey, payload);
+        dsWriteLocalJson(cardsStorageKey, payload);
         setMessage("Card data saved locally on this device.", false);
     } catch (error) {
         setMessage(error.message, true);
@@ -145,7 +145,7 @@ function importCardsFromFile(event) {
                 throw new Error("Invalid cards JSON format.");
             }
 
-            writeLocalJson(cardsStorageKey, parsed);
+            dsWriteLocalJson(cardsStorageKey, parsed);
             cardsContainer.innerHTML = "";
             parsed.forEach((card) => cardsContainer.appendChild(createCardEditor(card)));
             setMessage("Cards imported and saved locally.", false);
@@ -171,7 +171,7 @@ async function syncCardsFromSource() {
         const cards = await response.json();
         if (!isValidCardsPayload(cards)) throw new Error("Online card data format is invalid.");
 
-        writeLocalJson(cardsStorageKey, cards);
+        dsWriteLocalJson(cardsStorageKey, cards);
         cardsContainer.innerHTML = "";
         cards.forEach((card) => cardsContainer.appendChild(createCardEditor(card)));
         setMessage("Cards synced from online source and saved locally.", false);
