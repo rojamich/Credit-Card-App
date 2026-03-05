@@ -9,6 +9,18 @@
     "network": "visa",
     "tier": "signature",
     "foreignTransactionFee": true,
+    "instances": [
+      {
+        "id": "fu_physical",
+        "label": "Freedom Unlimited - Physical",
+        "last4": "0034"
+      },
+      {
+        "id": "fu_wallet",
+        "label": "Freedom Unlimited - Mobile Wallet",
+        "last4": null
+      }
+    ],
     "bonuses": {
       "default": 1.5,
       "restaurants": 3,

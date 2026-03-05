@@ -1,23 +1,27 @@
-const CACHE_NAME = "walletapp-v7";
+const CACHE_NAME = "walletapp-v8";
 
 const CORE_ASSETS = [
     "./",
     "./index.html",
     "./banks.html",
     "./cards.html",
+    "./offers.html",
     "./offline.html",
     "./styles/mainStyle.css",
     "./styles/walletStyle.css",
     "./styles/adminStyle.css",
+    "./styles/offersStyle.css",
     "./js/dataStore.js",
     "./js/walletScript.js",
     "./js/banksScript.js",
     "./js/cardsScript.js",
+    "./js/offersScript.js",
     "./js/registerSw.js",
     "./database/bankData.json",
     "./database/cardsData.json",
     "./database/banks.json",
     "./database/cards.json",
+    "./database/offers.json",
     "./logo/wallet.png",
     "./logo/cardBonusesIcons/default-icon.png",
     "./logo/cardBonusesIcons/airfare-icon.png",

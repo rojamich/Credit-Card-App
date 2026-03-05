@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Offers</title>
+    <link rel="stylesheet" href="./styles/mainStyle.css?v=2026-03-05">
+    <link rel="stylesheet" href="./styles/offersStyle.css?v=2026-03-05">
+    <link rel="icon" href="./favicon.ico" type="image/x-icon">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0b57d0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CardOpt">
+    <link rel="apple-touch-icon" href="./logo/wallet.png">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="./index.html">
+                <img src="./logo/wallet.png" class="brand-logo" alt="Card Optimizer">
+                <span>Card Optimizer</span>
+            </a>
+            <nav class="topnav" aria-label="Primary">
+                <a class="nav-tab" href="./index.html">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v2H3V7zm0 4h18v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-6zm3 2v2h4v-2H6z"/></svg>
+                    <span>Wallet</span>
+                </a>
+                <a class="nav-tab" href="./banks.html">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 8v2h20V8L12 3zm-7 9h2v6H5v-6zm4 0h2v6H9v-6zm4 0h2v6h-2v-6zm4 0h2v6h-2v-6zM2 20h20v2H2z"/></svg>
+                    <span>Banks</span>
+                </a>
+                <a class="nav-tab" href="./cards.html">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v2H2V6zm0 4h20v8a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-8zm3 3h6v2H5v-2z"/></svg>
+                    <span>Cards</span>
+                </a>
+                <a class="nav-tab is-active" href="./offers.html" aria-current="page">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v10H4V7zm2 2v6h12V9H6zm2 1h4v2H8v-2z"/></svg>
+                    <span>Offers</span>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="offers-page">
+        <section class="offers-controls">
+            <h2>Offers</h2>
+            <div class="offers-filters">
+                <label>Profile
+                    <select id="offers-profile-select">
+                        <option value="michael">Michael</option>
+                        <option value="jenna">Jenna</option>
+                        <option value="both">Both</option>
+                    </select>
+                </label>
+                <label>Search
+                    <input id="offers-search-input" type="text" placeholder="Merchant or alias">
+                </label>
+                <label>Status
+                    <select id="offers-status-select">
+                        <option value="active">Active</option>
+                        <option value="expired">Expired</option>
+                        <option value="all">All</option>
+                    </select>
+                </label>
+                <label>Provider
+                    <select id="offers-provider-select">
+                        <option value="all">All</option>
+                        <option value="chase">Chase</option>
+                        <option value="amex">Amex</option>
+                        <option value="other">Other</option>
+                    </select>
+                </label>
+                <label>Category
+                    <select id="offers-category-select">
+                        <option value="all">All</option>
+                    </select>
+                </label>
+            </div>
+            <div class="points-settings">
+                <p>Points valuation ($ per point)</p>
+                <label>Amex MR <input id="points-amex-mr" type="number" step="0.001"></label>
+                <label>Chase UR <input id="points-chase-ur" type="number" step="0.001"></label>
+                <label>Cash <input id="points-cash" type="number" step="0.001"></label>
+            </div>
+            <p id="offers-profile-note" class="offers-note"></p>
+            <p class="offers-note">Edit published offers in <code>database/offers.json</code>.</p>
+        </section>
+
+        <section id="offers-list" class="offers-list"></section>
+    </main>
+
+    <div id="offer-popup" class="offer-popup hidden" role="dialog" aria-modal="true">
+        <div class="offer-popup-panel">
+            <div class="offer-popup-head">
+                <h3 id="offer-popup-title"></h3>
+                <button id="offer-popup-close" type="button">Close</button>
+            </div>
+            <p id="offer-popup-meta" class="offers-note"></p>
+            <label>Spend amount
+                <input id="offer-popup-spend" type="number" min="0" step="1">
+            </label>
+            <div id="offer-popup-results" class="offer-results"></div>
+            <details>
+                <summary>Used attachments</summary>
+                <div id="offer-popup-used" class="offer-results"></div>
+            </details>
+        </div>
+    </div>
+
+    <script src="./js/dataStore.js?v=2026-03-05"></script>
+    <script src="./js/offersScript.js?v=2026-03-05"></script>
+    <script src="./js/registerSw.js?v=2026-03-05"></script>
+</body>
+</html>

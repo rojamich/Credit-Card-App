@@ -1,5 +1,6 @@
 const BANKS_STORAGE_KEY = "ccapp_banks_v1";
 const CARDS_STORAGE_KEY = "ccapp_cards_v1";
+const OFFERS_STORAGE_KEY = "ccapp_offers_v1";
 const ALLOWED_CARD_NETWORKS = ["visa", "amex", "mastercard", "discover"];
 const ALLOWED_CARD_TIERS = ["standard", "signature", "infinite", "world", "world-elite"];
 const CATEGORY_DEFS = Object.freeze({
@@ -98,6 +99,29 @@ function normalizeCardId(raw) {
     return normalizeBonusKey(raw);
 }
 
+function normalizeOfferId(raw) {
+    return normalizeBonusKey(raw);
+}
+
+function normalizeOfferType(raw) {
+    const value = String(raw || "").trim().toLowerCase();
+    if (["percent", "fixed", "points"].includes(value)) return value;
+    return "";
+}
+
+function normalizeProvider(raw) {
+    const value = String(raw || "").trim().toLowerCase();
+    if (["chase", "amex", "other"].includes(value)) return value;
+    return "other";
+}
+
+function toIsoDateOrEmpty(raw) {
+    const value = String(raw || "").trim();
+    if (!value) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    return "";
+}
+
 function coerceBoolean(value, defaultValue) {
     if (typeof value === "boolean") return value;
     if (value === null || typeof value === "undefined" || value === "") return defaultValue;
@@ -108,6 +132,26 @@ function coerceBoolean(value, defaultValue) {
         if (["true", "1", "yes", "on", "y"].includes(normalized)) return true;
     }
     return Boolean(value);
+}
+
+function normalizeCardInstances(rawInstances) {
+    if (!Array.isArray(rawInstances)) return [];
+    const seen = new Set();
+    return rawInstances
+        .filter((item) => item && typeof item === "object")
+        .map((item) => {
+            const id = normalizeCardId(item.id || item.label || "");
+            const label = String(item.label || "").trim();
+            const last4Raw = String(item.last4 ?? "").trim();
+            const last4 = /^\d{4}$/.test(last4Raw) ? last4Raw : null;
+            return { id, label, last4 };
+        })
+        .filter((item) => item.id)
+        .filter((item) => {
+            if (seen.has(item.id)) return false;
+            seen.add(item.id);
+            return true;
+        });
 }
 
 function coerceInWallet(value) {
@@ -231,6 +275,7 @@ function validateAndNormalizeCards(payload) {
             network: "visa",
             tier: "standard",
             foreignTransactionFee: true,
+            instances: [],
             bonuses: { default: 1 },
         };
 
@@ -245,6 +290,7 @@ function validateAndNormalizeCards(payload) {
         normalized.photo = String(card.photo ?? card.image ?? card.photoPath ?? "").trim();
         normalized.photoPath = normalized.photo;
         normalized.inWallet = coerceInWallet(card.inWallet);
+        normalized.instances = normalizeCardInstances(card.instances);
         const hasNetworkField = Object.prototype.hasOwnProperty.call(card, "network");
         const hasTierField = Object.prototype.hasOwnProperty.call(card, "tier");
         normalized.network = normalizeCardNetwork(card.network);
@@ -332,6 +378,107 @@ function validateAndNormalizeCards(payload) {
     return { ok: errors.length === 0, data, errors };
 }
 
+function validateAndNormalizeOffers(payload) {
+    const errors = [];
+    if (!Array.isArray(payload)) {
+        return { ok: false, data: [], errors: ["Offer data must be an array."] };
+    }
+
+    const seenIds = new Set();
+    const data = payload.map((offer, index) => {
+        const row = index + 1;
+        const normalized = {
+            id: "",
+            merchantKey: "",
+            merchantName: "",
+            provider: "other",
+            expires: "",
+            startDate: "",
+            categories: [],
+            offerType: "",
+            rate: null,
+            maxDiscount: null,
+            minSpend: null,
+            fixedAmount: null,
+            points: null,
+            program: "",
+            aliases: [],
+            notes: "",
+            attachments: [],
+        };
+
+        if (!offer || typeof offer !== "object") {
+            errors.push(`Offer ${row}: must be an object.`);
+            return normalized;
+        }
+
+        normalized.id = normalizeOfferId(offer.id || offer.merchantName || `offer_${row}`);
+        normalized.merchantKey = normalizeBonusKey(offer.merchantKey || offer.merchantName);
+        normalized.merchantName = String(offer.merchantName || "").trim();
+        normalized.provider = normalizeProvider(offer.provider);
+        normalized.expires = toIsoDateOrEmpty(offer.expires);
+        normalized.startDate = toIsoDateOrEmpty(offer.startDate);
+        normalized.offerType = normalizeOfferType(offer.offerType);
+        normalized.program = String(offer.program || "").trim();
+        normalized.notes = String(offer.notes || "").trim();
+        normalized.aliases = Array.isArray(offer.aliases) ? offer.aliases.map((alias) => String(alias || "").trim()).filter(Boolean) : [];
+        normalized.categories = Array.isArray(offer.categories)
+            ? offer.categories.map((key) => normalizeBonusKey(key)).filter((key) => key && key !== "default")
+            : [];
+
+        if (!normalized.id) errors.push(`Offer ${row}: id is required.`);
+        if (!normalized.merchantKey) errors.push(`Offer ${row}: merchantKey is required.`);
+        if (!normalized.merchantName) errors.push(`Offer ${row}: merchantName is required.`);
+        if (!normalized.expires) errors.push(`Offer ${row}: expires must be YYYY-MM-DD.`);
+        if (!normalized.offerType) errors.push(`Offer ${row}: offerType must be percent|fixed|points.`);
+
+        const rate = toFiniteNumber(offer.rate);
+        const maxDiscount = toFiniteNumber(offer.maxDiscount);
+        const minSpend = toFiniteNumber(offer.minSpend);
+        const fixedAmount = toFiniteNumber(offer.fixedAmount);
+        const points = toFiniteNumber(offer.points);
+
+        normalized.rate = rate;
+        normalized.maxDiscount = maxDiscount;
+        normalized.minSpend = minSpend;
+        normalized.fixedAmount = fixedAmount;
+        normalized.points = points;
+
+        if (normalized.offerType === "percent" && (rate === null || rate < 0)) {
+            errors.push(`Offer ${row}: percent offers require rate >= 0.`);
+        }
+        if (normalized.offerType === "fixed" && (fixedAmount === null || fixedAmount < 0)) {
+            errors.push(`Offer ${row}: fixed offers require fixedAmount >= 0.`);
+        }
+        if (normalized.offerType === "points" && (points === null || points < 0)) {
+            errors.push(`Offer ${row}: points offers require points >= 0.`);
+        }
+
+        normalized.attachments = Array.isArray(offer.attachments)
+            ? offer.attachments
+                .filter((item) => item && typeof item === "object")
+                .map((item) => ({
+                    cardId: normalizeCardId(item.cardId),
+                    cardInstanceId: normalizeCardId(item.cardInstanceId || ""),
+                    note: String(item.note || "").trim(),
+                }))
+                .filter((item) => item.cardId)
+            : [];
+
+        if (seenIds.has(normalized.id)) errors.push(`Offer ${row}: duplicate id "${normalized.id}".`);
+        else seenIds.add(normalized.id);
+
+        return normalized;
+    });
+
+    return { ok: errors.length === 0, data, errors };
+}
+
+function normalizeOffersForRuntime(payload) {
+    const validation = validateAndNormalizeOffers(payload);
+    return validation.data;
+}
+
 function normalizeCardsForRuntime(payload) {
     if (!Array.isArray(payload)) return [];
 
@@ -372,6 +519,7 @@ function normalizeCardsForRuntime(payload) {
                 network: normalizeCardNetwork(card.network) || "visa",
                 tier: normalizeCardTier(card.tier) || "standard",
                 foreignTransactionFee: coerceBoolean(card.foreignTransactionFee, true),
+                instances: normalizeCardInstances(card.instances),
                 bonuses,
             };
 
@@ -448,6 +596,7 @@ async function loadDataset(storageKey, fallbackPath) {
 window.CCDataStore = {
     BANKS_STORAGE_KEY,
     CARDS_STORAGE_KEY,
+    OFFERS_STORAGE_KEY,
     loadDataset,
     readLocalJson,
     writeLocalJson,
@@ -457,11 +606,14 @@ window.CCDataStore = {
     prettyLabelFromKey,
     validateAndNormalizeBanks,
     validateAndNormalizeCards,
+    validateAndNormalizeOffers,
     normalizeBanksForRuntime,
     normalizeCardsForRuntime,
+    normalizeOffersForRuntime,
     normalizeCardNetwork,
     normalizeCardTier,
     normalizeCardId,
+    normalizeOfferId,
     ALLOWED_CARD_NETWORKS,
     ALLOWED_CARD_TIERS,
     CATEGORY_DEFS,

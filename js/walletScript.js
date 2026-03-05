@@ -6,6 +6,7 @@ const {
     validateAndNormalizeBanks: dsValidateAndNormalizeBanks,
     CARDS_STORAGE_KEY: cardsStorageKey,
     BANKS_STORAGE_KEY: banksStorageKey,
+    OFFERS_STORAGE_KEY: offersStorageKey,
     normalizeBonusKey: dsNormalizeBonusKey,
     normalizeBankName: dsNormalizeBankName,
     normalizeBankKey: dsNormalizeBankKey,
@@ -14,6 +15,7 @@ const {
     prettyLabelFromKey: dsPrettyLabelFromKey,
     normalizeCardId: dsNormalizeCardId,
     getCategoryDefsFromCards: dsGetCategoryDefsFromCards,
+    normalizeOffersForRuntime: dsNormalizeOffersForRuntime,
 } = window.CCDataStore;
 
 const WALLET_PREFS_STORAGE_KEY = "walletAppPrefs";
@@ -30,6 +32,7 @@ const FILTER_FAVORITES_WALLET = "favorites_wallet";
 const walletState = {
     cardData: [],
     bankData: [],
+    offerData: [],
     categories: [],
     selectedCategoryKey: null,
     prefs: null,
@@ -63,6 +66,15 @@ function createDefaultPrefs() {
             michael: [],
             jenna: [],
         },
+        usedOfferAttachmentsByProfile: {
+            michael: {},
+            jenna: {},
+        },
+        pointsValueByProgram: {
+            amex_mr: 0.01,
+            chase_ur: 0.015,
+            cash: 0.01,
+        },
     };
 }
 
@@ -83,6 +95,12 @@ function normalizePrefsStructure(rawPrefs) {
     const sourceProfiles = source.profiles && typeof source.profiles === "object" ? source.profiles : {};
     const sourcePins = source.pinnedCategoriesByProfile && typeof source.pinnedCategoriesByProfile === "object"
         ? source.pinnedCategoriesByProfile
+        : {};
+    const sourceUsed = source.usedOfferAttachmentsByProfile && typeof source.usedOfferAttachmentsByProfile === "object"
+        ? source.usedOfferAttachmentsByProfile
+        : {};
+    const sourcePoints = source.pointsValueByProgram && typeof source.pointsValueByProgram === "object"
+        ? source.pointsValueByProgram
         : {};
 
     const fromV2Favorites = source.favoritesByCardId && typeof source.favoritesByCardId === "object"
@@ -127,6 +145,14 @@ function normalizePrefsStructure(rawPrefs) {
         pinnedCategoriesByProfile: {
             michael: asCategoryArray(sourcePins.michael),
             jenna: asCategoryArray(sourcePins.jenna),
+        },
+        usedOfferAttachmentsByProfile: {
+            michael: sourceUsed.michael && typeof sourceUsed.michael === "object" ? sourceUsed.michael : {},
+            jenna: sourceUsed.jenna && typeof sourceUsed.jenna === "object" ? sourceUsed.jenna : {},
+        },
+        pointsValueByProgram: {
+            ...defaults.pointsValueByProgram,
+            ...(sourcePoints || {}),
         },
     };
 
@@ -274,6 +300,43 @@ function getProfileWalletSet(profileKey) {
     }
     const profile = walletState.prefs.profiles[profileKey];
     return new Set(profile ? profile.walletCardIds : []);
+}
+
+function todayIso() {
+    return new Date().toISOString().slice(0, 10);
+}
+
+function isOfferActive(offer) {
+    const today = todayIso();
+    if (offer.startDate && offer.startDate > today) return false;
+    if (offer.expires && offer.expires < today) return false;
+    return true;
+}
+
+function offerAttachmentKey(offerId, cardId, cardInstanceId) {
+    return `${offerId}|${cardId}|${cardInstanceId || ""}`;
+}
+
+function isAttachmentUsedForProfile(profileKey, offer, attachment) {
+    const key = offerAttachmentKey(offer.id, attachment.cardId, attachment.cardInstanceId);
+    if (profileKey === PROFILE_BOTH) {
+        const m = Boolean(walletState.prefs.usedOfferAttachmentsByProfile.michael[key]);
+        const j = Boolean(walletState.prefs.usedOfferAttachmentsByProfile.jenna[key]);
+        return m && j;
+    }
+    return Boolean((walletState.prefs.usedOfferAttachmentsByProfile[profileKey] || {})[key]);
+}
+
+function getActiveOffersForCategory(categoryKey) {
+    const normalized = dsNormalizeBonusKey(categoryKey);
+    if (!normalized) return [];
+    return walletState.offerData
+        .filter((offer) => isOfferActive(offer))
+        .filter((offer) => Array.isArray(offer.categories) && offer.categories.includes(normalized))
+        .filter((offer) => {
+            const attachments = Array.isArray(offer.attachments) ? offer.attachments : [];
+            return attachments.some((attachment) => !isAttachmentUsedForProfile(walletState.prefs.activeProfile, offer, attachment));
+        });
 }
 
 function isFavoriteCard(cardId) {
@@ -472,6 +535,15 @@ function renderBonuses(categories) {
         name.className = "bonus-name";
         name.textContent = prettyLabelFromKey(normalizedBonus);
 
+        const hasOffers = getActiveOffersForCategory(normalizedBonus).length > 0;
+        if (hasOffers) {
+            const alert = document.createElement("span");
+            alert.className = "bonus-offer-alert";
+            alert.textContent = "!";
+            alert.title = "Active offer available";
+            box.appendChild(alert);
+        }
+
         box.appendChild(pinButton);
         box.appendChild(logo);
         box.appendChild(name);
@@ -613,6 +685,23 @@ function showBestCard(bonus, cardData, bankData) {
         stats.appendChild(createStatCard("Value", `${card.weightedValue.toFixed(2)}x`, false));
         popupContent.appendChild(stats);
 
+        const categoryOffers = getActiveOffersForCategory(normalizedBonus).slice(0, 2);
+        if (categoryOffers.length) {
+            const banner = document.createElement("div");
+            banner.className = "wallet-offer-banner";
+            const merchantText = categoryOffers.map((offer) => offer.merchantName).join(", ");
+            banner.innerHTML = `<strong>Offer available:</strong> ${merchantText}`;
+            const viewButton = document.createElement("button");
+            viewButton.type = "button";
+            viewButton.className = "wallet-offer-link";
+            viewButton.textContent = "View offers";
+            viewButton.onclick = () => {
+                window.location.href = `./offers.html?category=${encodeURIComponent(normalizedBonus)}`;
+            };
+            banner.appendChild(viewButton);
+            popupContent.appendChild(banner);
+        }
+
         const buttons = document.createElement("div");
         buttons.className = "popup-buttons";
         const prevButton = document.createElement("button");
@@ -673,12 +762,14 @@ function showBestCard(bonus, cardData, bankData) {
 }
 
 async function loadWalletData() {
-    const [rawCards, rawBanks] = await Promise.all([
+    const [rawCards, rawBanks, rawOffers] = await Promise.all([
         dsLoadDataset(cardsStorageKey, "./database/cards.json"),
         dsLoadDataset(banksStorageKey, "./database/banks.json"),
+        dsLoadDataset(offersStorageKey, "./database/offers.json"),
     ]);
     walletState.cardData = applyCardRuntimeFields(dsNormalizeCardsForRuntime(rawCards));
     walletState.bankData = dsNormalizeBanksForRuntime(rawBanks);
+    walletState.offerData = dsNormalizeOffersForRuntime(rawOffers);
 }
 
 function refreshWalletUi() {
@@ -715,12 +806,14 @@ async function refreshDataFromNetwork() {
             fetchFirstAvailableJson(["./database/cards.json", "./database/cardsData.json"]),
             fetchFirstAvailableJson(["./database/banks.json", "./database/bankData.json"]),
         ]);
+        const remoteOffers = await fetchFirstAvailableJson(["./database/offers.json"]);
         const cardsValidation = dsValidateAndNormalizeCards(remoteCards);
         const banksValidation = dsValidateAndNormalizeBanks(remoteBanks);
         if (!cardsValidation.ok) throw new Error(cardsValidation.errors.join(" "));
         if (!banksValidation.ok) throw new Error(banksValidation.errors.join(" "));
         dsWriteLocalJson(cardsStorageKey, cardsValidation.data);
         dsWriteLocalJson(banksStorageKey, banksValidation.data);
+        dsWriteLocalJson(offersStorageKey, dsNormalizeOffersForRuntime(remoteOffers));
         localStorage.setItem(LAST_SYNC_STORAGE_KEY, new Date().toISOString());
         renderLastSync();
         await loadWalletData();
