@@ -41,14 +41,32 @@
     <main class="wallet-page">
         <section class="quick-categories" aria-labelledby="quick-categories-title">
             <div class="quick-categories-head">
-                <h2 id="quick-categories-title">Quick Categories</h2>
-                <p>Tap a category to see the best card. Star categories to pin them first.</p>
+                <h2 id="quick-categories-title">Favorite Categories</h2>
+                <p>Shortcut categories from your favorite cards.</p>
             </div>
+            <div id="favorite-categories-grid" class="favorite-categories-grid"></div>
+            <p id="favorite-categories-empty" class="favorite-categories-empty hidden">⭐ Add favorite cards to pin categories here.</p>
             <div class="wallet-controls">
-                <label class="wallet-toggle">
-                    <input id="only-wallet-cards-toggle" type="checkbox" checked>
-                    <span>Only cards in my wallet</span>
-                </label>
+                <div class="wallet-selectors">
+                    <label class="wallet-select-wrap" for="wallet-profile-select">
+                        <span>Profile</span>
+                        <select id="wallet-profile-select">
+                            <option value="michael">Michael</option>
+                            <option value="jenna">Jenna</option>
+                            <option value="both">Both</option>
+                        </select>
+                    </label>
+                    <label class="wallet-select-wrap" for="wallet-filter-select">
+                        <span>Filter</span>
+                        <select id="wallet-filter-select">
+                            <option value="all">All Cards</option>
+                            <option value="wallet">Only In Wallet</option>
+                            <option value="favorites">Favorites</option>
+                            <option value="favorites_wallet">Favorites In Wallet</option>
+                        </select>
+                    </label>
+                </div>
+                <p id="wallet-profile-note" class="wallet-status" aria-live="polite"></p>
                 <div class="wallet-actions">
                     <button id="refresh-wallet-data-button" type="button" class="wallet-action-button">Refresh data</button>
                     <button id="reset-wallet-data-button" type="button" class="wallet-action-button wallet-action-danger">Reset local data</button>
@@ -56,7 +74,7 @@
                 <p id="wallet-last-sync" class="wallet-status" aria-live="polite"></p>
                 <p id="wallet-controls-message" class="wallet-status" aria-live="polite"></p>
             </div>
-            <div id="quick-categories-grid" class="quick-categories-grid"></div>
+            <div id="wallet-cards-grid" class="wallet-cards-grid"></div>
         </section>
         <div class="bonus-container" id="bonus-container"></div>
     </main>

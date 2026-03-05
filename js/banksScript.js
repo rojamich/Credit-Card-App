@@ -238,9 +238,14 @@ async function syncBanksFromSource() {
     }
 
     try {
-        const response = await fetch(`./database/bankData.json?ts=${Date.now()}`, { cache: "no-store" });
-        if (!response.ok) throw new Error("Could not fetch online bank data.");
-        const parsed = await response.json();
+        let parsed = null;
+        for (const path of ["./database/banks.json", "./database/bankData.json"]) {
+            const response = await fetch(`${path}?ts=${Date.now()}`, { cache: "no-store" });
+            if (!response.ok) continue;
+            parsed = await response.json();
+            break;
+        }
+        if (!parsed) throw new Error("Could not fetch online bank data.");
         const validation = dsValidateAndNormalizeBanks(parsed);
         if (!validation.ok) {
             setMessage(`Sync blocked:\n${validation.errors.map((e) => `- ${e}`).join("\n")}`, true);
@@ -257,7 +262,7 @@ async function syncBanksFromSource() {
 
 async function loadBanks() {
     try {
-        const raw = await dsLoadDataset(banksStorageKey, "./database/bankData.json");
+        const raw = await dsLoadDataset(banksStorageKey, "./database/banks.json");
         banks = dsNormalizeBanksForRuntime(raw);
         renderBanks();
         setMessage("Bank data loaded.", false);

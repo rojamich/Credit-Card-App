@@ -85,6 +85,28 @@
                     <input id="card-bank-custom-input" type="text" placeholder="example_bank_key">
                 </div>
 
+                <div class="dual-select-row">
+                    <div>
+                        <label for="card-network-select">Network</label>
+                        <select id="card-network-select">
+                            <option value="visa">Visa</option>
+                            <option value="amex">Amex</option>
+                            <option value="mastercard">Mastercard</option>
+                            <option value="discover">Discover</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="card-tier-select">Tier</label>
+                        <select id="card-tier-select">
+                            <option value="standard">Standard</option>
+                            <option value="signature">Signature</option>
+                            <option value="infinite">Infinite</option>
+                            <option value="world">World</option>
+                            <option value="world-elite">World Elite</option>
+                        </select>
+                    </div>
+                </div>
+
                 <label for="card-annual-fee-input">Annual Fee (optional)</label>
                 <input id="card-annual-fee-input" type="number" step="1" placeholder="0">
 

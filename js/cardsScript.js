@@ -17,6 +17,8 @@ const cardNameInput = document.getElementById("card-name-input");
 const cardBankSelect = document.getElementById("card-bank-select");
 const cardBankCustomWrap = document.getElementById("card-bank-custom-wrap");
 const cardBankCustomInput = document.getElementById("card-bank-custom-input");
+const cardNetworkSelect = document.getElementById("card-network-select");
+const cardTierSelect = document.getElementById("card-tier-select");
 const cardAnnualFeeInput = document.getElementById("card-annual-fee-input");
 const cardInWalletInput = document.getElementById("card-in-wallet-input");
 const photoModeUpload = document.getElementById("photo-mode-upload");
@@ -42,6 +44,8 @@ const {
     normalizeBankKey: dsNormalizeBankKey,
     normalizeBonusKey: dsNormalizeBonusKey,
     prettyLabelFromKey: dsPrettyLabelFromKey,
+    normalizeCardNetwork: dsNormalizeCardNetwork,
+    normalizeCardTier: dsNormalizeCardTier,
 } = window.CCDataStore;
 
 const CURATED_CATEGORIES = [
@@ -99,6 +103,30 @@ function getCardPhoto(card) {
     return String(card.photo ?? card.image ?? card.photoPath ?? "").trim();
 }
 
+function formatNetworkTier(networkRaw, tierRaw) {
+    const network = dsNormalizeCardNetwork(networkRaw) || "visa";
+    const tier = dsNormalizeCardTier(tierRaw) || "standard";
+
+    const networkLabel = {
+        visa: "Visa",
+        amex: "Amex",
+        mastercard: "Mastercard",
+        discover: "Discover",
+    }[network] || "Visa";
+
+    if (network === "amex") return "Amex";
+    if (tier === "standard") return networkLabel;
+
+    const tierLabel = {
+        signature: "Signature",
+        infinite: "Infinite",
+        world: "World",
+        "world-elite": "World Elite",
+    }[tier] || "";
+
+    return tierLabel ? `${networkLabel} ${tierLabel}` : networkLabel;
+}
+
 function createPill(text) {
     const pill = document.createElement("span");
     pill.className = "bonus-pill";
@@ -147,6 +175,7 @@ function renderCards() {
 
         const bank = getBankByKey(card.bank);
         info.appendChild(createTileMeta(`Bank: ${bank ? bank.label : card.bank}`));
+        info.appendChild(createTileMeta(`Network Tier: ${formatNetworkTier(card.network, card.tier)}`));
         if (typeof card.annualFee === "number" && Number.isFinite(card.annualFee)) {
             info.appendChild(createTileMeta(`Annual Fee: $${card.annualFee.toFixed(0)}`));
         }
@@ -325,12 +354,14 @@ function createBonusRow(initialKey, initialValue) {
 function openCardEditor(index) {
     editingIndex = typeof index === "number" ? index : null;
     const card = editingIndex === null
-        ? { card: "", bank: "", photo: "", bonuses: { default: 1 } }
+        ? { card: "", bank: "", photo: "", network: "visa", tier: "standard", bonuses: { default: 1 } }
         : cards[editingIndex];
 
     cardEditorTitle.textContent = editingIndex === null ? "Add Card" : "Edit Card";
     cardNameInput.value = card.card || "";
     renderBankSelect(card.bank || "");
+    cardNetworkSelect.value = dsNormalizeCardNetwork(card.network) || "visa";
+    cardTierSelect.value = dsNormalizeCardTier(card.tier) || "standard";
     cardAnnualFeeInput.value = typeof card.annualFee === "number" ? String(card.annualFee) : "";
     cardInWalletInput.checked = card.inWallet !== false;
 
@@ -408,10 +439,14 @@ function collectCardFromForm() {
     const name = cardNameInput.value.trim();
     const selectedBank = cardBankSelect.value === "__custom__" ? cardBankCustomInput.value : cardBankSelect.value;
     const bankKey = dsNormalizeBankKey(selectedBank);
+    const network = dsNormalizeCardNetwork(cardNetworkSelect.value);
+    const tier = dsNormalizeCardTier(cardTierSelect.value);
     const annualFeeRaw = cardAnnualFeeInput.value.trim();
 
     if (!name) errors.push("Card name is required.");
     if (!bankKey) errors.push("Bank is required.");
+    if (!network) errors.push("Network is required.");
+    if (!tier) errors.push("Tier is required.");
 
     const bonusesResult = collectBonusesFromForm();
     errors.push(...bonusesResult.errors);
@@ -420,6 +455,8 @@ function collectCardFromForm() {
         card: name,
         bank: bankKey,
         inWallet: cardInWalletInput.checked,
+        network,
+        tier,
         photo: currentPhotoValue || "",
         photoPath: currentPhotoValue || "",
         bonuses: bonusesResult.bonuses,
@@ -550,9 +587,14 @@ async function syncCardsFromSource() {
     }
 
     try {
-        const response = await fetch(`./database/cardsData.json?ts=${Date.now()}`, { cache: "no-store" });
-        if (!response.ok) throw new Error("Could not fetch online card data.");
-        const parsed = await response.json();
+        let parsed = null;
+        for (const path of ["./database/cards.json", "./database/cardsData.json"]) {
+            const response = await fetch(`${path}?ts=${Date.now()}`, { cache: "no-store" });
+            if (!response.ok) continue;
+            parsed = await response.json();
+            break;
+        }
+        if (!parsed) throw new Error("Could not fetch online card data.");
         const validation = dsValidateAndNormalizeCards(parsed);
         if (!validation.ok) {
             setMessage(`Sync blocked:\n${validation.errors.map((e) => `- ${e}`).join("\n")}`, true);
@@ -590,8 +632,8 @@ function switchPhotoMode(mode) {
 async function loadInitialData() {
     try {
         const [rawBanks, rawCards] = await Promise.all([
-            dsLoadDataset(banksStorageKey, "./database/bankData.json"),
-            dsLoadDataset(cardsStorageKey, "./database/cardsData.json"),
+            dsLoadDataset(banksStorageKey, "./database/banks.json"),
+            dsLoadDataset(cardsStorageKey, "./database/cards.json"),
         ]);
         banks = dsNormalizeBanksForRuntime(rawBanks);
         cards = dsNormalizeCardsForRuntime(rawCards);

@@ -1,5 +1,7 @@
 const BANKS_STORAGE_KEY = "ccapp_banks_v1";
 const CARDS_STORAGE_KEY = "ccapp_cards_v1";
+const ALLOWED_CARD_NETWORKS = ["visa", "amex", "mastercard", "discover"];
+const ALLOWED_CARD_TIERS = ["standard", "signature", "infinite", "world", "world-elite"];
 
 function readLocalJson(key) {
     const raw = localStorage.getItem(key);
@@ -62,6 +64,21 @@ function prettyLabelFromKey(raw) {
 function toFiniteNumber(value) {
     const num = typeof value === "number" ? value : Number(value);
     return Number.isFinite(num) ? num : null;
+}
+
+function normalizeCardNetwork(raw) {
+    const normalized = String(raw || "").toLowerCase().trim();
+    if (!ALLOWED_CARD_NETWORKS.includes(normalized)) return "";
+    return normalized;
+}
+
+function normalizeCardTier(raw) {
+    const normalized = String(raw || "")
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "-");
+    if (!ALLOWED_CARD_TIERS.includes(normalized)) return "";
+    return normalized;
 }
 
 function coerceInWallet(value) {
@@ -181,6 +198,8 @@ function validateAndNormalizeCards(payload) {
             photo: "",
             photoPath: "",
             inWallet: true,
+            network: "visa",
+            tier: "standard",
             bonuses: { default: 1 },
         };
 
@@ -194,6 +213,10 @@ function validateAndNormalizeCards(payload) {
         normalized.photo = String(card.photo ?? card.image ?? card.photoPath ?? "").trim();
         normalized.photoPath = normalized.photo;
         normalized.inWallet = coerceInWallet(card.inWallet);
+        const hasNetworkField = Object.prototype.hasOwnProperty.call(card, "network");
+        const hasTierField = Object.prototype.hasOwnProperty.call(card, "tier");
+        normalized.network = normalizeCardNetwork(card.network);
+        normalized.tier = normalizeCardTier(card.tier);
 
         if (Object.prototype.hasOwnProperty.call(card, "annualFee") && card.annualFee !== "" && card.annualFee !== null) {
             const annualFeeValue = toFiniteNumber(card.annualFee);
@@ -214,6 +237,14 @@ function validateAndNormalizeCards(payload) {
 
         if (!normalized.card) errors.push(`Card ${cardNum}: card name is required.`);
         if (!normalized.bank) errors.push(`Card ${cardNum}: bank is required.`);
+        if (hasNetworkField && !normalized.network) {
+            errors.push(`Card ${cardNum}: network must be one of ${ALLOWED_CARD_NETWORKS.join(", ")}.`);
+        }
+        if (hasTierField && !normalized.tier) {
+            errors.push(`Card ${cardNum}: tier must be one of ${ALLOWED_CARD_TIERS.join(", ")}.`);
+        }
+        if (!normalized.network) normalized.network = "visa";
+        if (!normalized.tier) normalized.tier = "standard";
 
         if (!card.bonuses || typeof card.bonuses !== "object" || Array.isArray(card.bonuses)) {
             errors.push(`Card ${cardNum}: bonuses must be an object.`);
@@ -289,6 +320,8 @@ function normalizeCardsForRuntime(payload) {
                 photo,
                 photoPath: photo,
                 inWallet: coerceInWallet(card.inWallet),
+                network: normalizeCardNetwork(card.network) || "visa",
+                tier: normalizeCardTier(card.tier) || "standard",
                 bonuses,
             };
 
@@ -333,4 +366,8 @@ window.CCDataStore = {
     validateAndNormalizeCards,
     normalizeBanksForRuntime,
     normalizeCardsForRuntime,
+    normalizeCardNetwork,
+    normalizeCardTier,
+    ALLOWED_CARD_NETWORKS,
+    ALLOWED_CARD_TIERS,
 };

@@ -2,7 +2,10 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Center the container on the page */
+.hidden {
+    display: none !important;
+}
+
 .wallet-page {
     max-width: 1120px;
     margin: 20px auto;
@@ -14,7 +17,7 @@ body {
     background: #ffffff;
     border: 1px solid #d8e0ef;
     border-radius: 14px;
-    padding: 12px;
+    padding: 14px;
 }
 
 .quick-categories-head h2 {
@@ -28,6 +31,43 @@ body {
     font-size: 14px;
 }
 
+.favorite-categories-grid {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.favorite-category-chip {
+    min-height: 42px;
+    border: 1px solid #c7d7f4;
+    background: #edf3ff;
+    color: #14366b;
+    border-radius: 999px;
+    padding: 6px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.favorite-category-chip:hover {
+    background: #dfeaff;
+}
+
+.favorite-category-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+}
+
+.favorite-categories-empty {
+    margin: 10px 0 0;
+    color: #3b4d70;
+    font-size: 14px;
+}
+
 .wallet-controls {
     margin-top: 12px;
     padding: 10px;
@@ -36,17 +76,32 @@ body {
     border-radius: 12px;
 }
 
-.wallet-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 44px;
-    font-weight: 700;
+.wallet-selectors {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.wallet-select-wrap {
+    display: grid;
+    gap: 5px;
     color: #193463;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.wallet-select-wrap select {
+    min-height: 44px;
+    border: 1px solid #c7d7f4;
+    border-radius: 10px;
+    background: #fff;
+    color: #14366b;
+    font-weight: 700;
+    padding: 0 10px;
 }
 
 .wallet-actions {
-    margin-top: 8px;
+    margin-top: 10px;
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -89,66 +144,96 @@ body {
     color: #0f7a30;
 }
 
-.quick-categories-grid {
+.wallet-cards-grid {
     margin-top: 12px;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
 }
 
-.quick-category-item {
-    position: relative;
+.wallet-card-item {
+    border: 1px solid #d5e2f6;
+    border-radius: 14px;
+    background: #ffffff;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 110px 1fr;
 }
 
-.quick-category-button {
+.wallet-card-image {
     width: 100%;
-    min-height: 52px;
-    border: 1px solid #cbd8ee;
-    background: #f7f9ff;
-    border-radius: 12px;
-    padding: 10px 44px 10px 12px;
-    text-align: left;
-    font-size: 15px;
-    font-weight: 700;
+    height: 110px;
+    object-fit: cover;
+    background: #f4f7ff;
+}
+
+.wallet-card-body {
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+}
+
+.wallet-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.wallet-card-name {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.3;
     color: #1b2f55;
-    cursor: pointer;
 }
 
-.quick-category-button:hover {
-    background: #eaf1ff;
-}
-
-.quick-category-item.is-selected .quick-category-button {
-    border-color: #0b57d0;
-    background: #dceaff;
-    color: #0b3e96;
-}
-
-.quick-category-item.is-favorite .quick-category-button {
-    border-color: #e2b100;
-}
-
-.quick-category-star {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 44px;
-    height: 44px;
-    border: none;
+.wallet-card-star {
+    min-width: 36px;
+    min-height: 36px;
+    border: 1px solid #e5d29c;
     border-radius: 10px;
-    background: transparent;
-    color: #8b7a2a;
-    font-size: 22px;
-    line-height: 1;
+    background: #fff8df;
+    color: #8b6a00;
+    font-size: 19px;
     cursor: pointer;
 }
 
-.quick-category-star[aria-pressed="true"] {
-    color: #d99d00;
+.wallet-card-star[aria-pressed="true"] {
+    color: #d69d00;
 }
 
-.quick-category-star:hover {
-    background: #f5edcf;
+.wallet-network-badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    border: 1px solid #bfd2f5;
+    background: #edf3ff;
+    color: #1a3a73;
+    border-radius: 999px;
+    padding: 4px 9px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.wallet-card-meta {
+    margin: 0;
+    font-size: 13px;
+    color: #4a5e86;
+}
+
+.wallet-toggle-button {
+    min-height: 38px;
+    border: 1px solid #bcd1f4;
+    background: #eaf2ff;
+    color: #0b3e96;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.wallet-toggle-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .bonus-container {
@@ -156,19 +241,18 @@ body {
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
     padding: 5px;
     box-sizing: border-box;
 }
 
-/* Style for each bonus box */
 .bonus-box {
     background-color: #f4f4f4;
     border: 2px solid #ddd;
     border-radius: 10px;
-    padding: 20px;
+    padding: 18px;
     width: 170px;
-    min-height: 150px;
+    min-height: 145px;
     text-align: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s, box-shadow 0.2s;
@@ -179,8 +263,8 @@ body {
 }
 
 .bonus-box:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+    transform: scale(1.03);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.18);
 }
 
 .bonus-box.is-selected {
@@ -188,70 +272,118 @@ body {
     background: #e5efff;
 }
 
-/* Bonus logo styling */
 .bonus-logo {
-    width: 70px;
-    height: 70px;
+    width: 66px;
+    height: 66px;
     margin-bottom: 10px;
     border-radius: 50%;
 }
 
-/* Bonus name styling */
 .bonus-name {
-    font-size: 17px;
-    font-weight: bold;
+    font-size: 16px;
+    font-weight: 700;
     margin-top: 5px;
 }
 
-/* Remove button styling */
-.bonus-icon {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 6px;
-    min-width: 44px;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    touch-action: manipulation;
-}
-
-/* Popup container */
 .popup {
     position: fixed;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px;
-    background-color: rgba(0, 0, 0, 0.35);
+    padding: 14px;
+    background-color: rgba(0, 0, 0, 0.4);
     z-index: 1000;
 }
 
-/* Popup content */
 .popup-content {
     width: 100%;
-    max-width: 400px;
-    background-color: white;
-    border: 2px solid #ddd;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    padding: 20px;
-    text-align: center;
+    max-width: 420px;
+    background: #ffffff;
+    border: 1px solid #d6e2f8;
+    border-radius: 16px;
+    box-shadow: 0 10px 26px rgba(7, 40, 95, 0.22);
+    padding: 14px;
 }
 
 .popup-card-image {
     width: 100%;
-    height: auto;
-    max-height: 200px;
-    margin-bottom: 15px;
-    border-radius: 10px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 12px;
 }
 
-/* Popup buttons */
+.popup-head {
+    margin-top: 12px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.popup-title {
+    margin: 0;
+    color: #1b2f55;
+    font-size: 20px;
+}
+
+.popup-favorite-button {
+    width: 44px;
+    height: 44px;
+    border: 1px solid #e5d29c;
+    border-radius: 12px;
+    background: #fff8df;
+    color: #8b6a00;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.popup-favorite-button[aria-pressed="true"] {
+    color: #d69d00;
+}
+
+.popup-stats-grid {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.popup-stat {
+    border: 1px solid #d8e2f4;
+    border-radius: 12px;
+    padding: 10px;
+    background: #f7faff;
+}
+
+.popup-stat-label {
+    margin: 0 0 6px;
+    font-size: 12px;
+    color: #4a5e86;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.popup-stat-value {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1c335f;
+}
+
+.popup-network-badge {
+    display: inline-flex;
+    border: 1px solid #bfd2f5;
+    background: #edf3ff;
+    color: #1a3a73;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
 .popup-buttons {
-    margin-top: 15px;
+    margin-top: 14px;
     display: flex;
     justify-content: space-around;
     gap: 10px;
@@ -263,20 +395,14 @@ body {
     min-height: 44px;
     font-size: 15px;
     border: none;
-    border-radius: 5px;
+    border-radius: 10px;
     cursor: pointer;
     background-color: #007bff;
     color: white;
-    transition: background-color 0.3s;
 }
 
 .popup-buttons button:hover {
     background-color: #0056b3;
-}
-
-.popup-warning {
-    color: #8a5a00;
-    font-weight: 700;
 }
 
 .topnav .nav-tab {
@@ -285,26 +411,18 @@ body {
     padding-bottom: 10px;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 720px) {
     .wallet-page {
         margin: 10px auto;
         padding: 0 10px calc(20px + env(safe-area-inset-bottom));
     }
 
-    .quick-categories {
-        padding: 10px;
+    .wallet-selectors {
+        grid-template-columns: 1fr;
     }
 
-    .quick-categories-head h2 {
-        font-size: 18px;
-    }
-
-    .quick-categories-grid {
-        gap: 8px;
-    }
-
-    .wallet-controls {
-        padding: 8px;
+    .wallet-cards-grid {
+        grid-template-columns: 1fr;
     }
 
     .wallet-actions {
@@ -313,29 +431,24 @@ body {
     }
 
     .bonus-container {
-        gap: 12px;
+        gap: 10px;
         justify-content: stretch;
     }
 
     .bonus-box {
-        width: calc(50% - 6px);
-        min-width: 140px;
-        min-height: 132px;
-        padding: 14px;
+        width: calc(50% - 5px);
+        min-width: 130px;
+        min-height: 124px;
+        padding: 12px;
     }
 
     .bonus-logo {
-        width: 60px;
-        height: 60px;
-    }
-
-    .popup {
-        padding: 10px;
+        width: 56px;
+        height: 56px;
     }
 
     .popup-content {
         max-width: 100%;
-        padding: 16px;
     }
 
     .popup-buttons button {
@@ -343,14 +456,8 @@ body {
     }
 }
 
-@media (min-width: 760px) {
-    .quick-categories-grid {
+@media (min-width: 920px) {
+    .wallet-cards-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-}
-
-@media (min-width: 1024px) {
-    .quick-categories-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }
