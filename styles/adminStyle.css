@@ -93,6 +93,10 @@ button:hover {
     font-size: 14px;
 }
 
+.wallet-manager-head .secondary-button {
+    margin-top: 8px;
+}
+
 .wallet-manager-controls {
     margin-top: 10px;
     display: grid;

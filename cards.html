@@ -52,31 +52,14 @@
         <section class="wallet-manager" aria-labelledby="wallet-manager-title">
             <div class="wallet-manager-head">
                 <h3 id="wallet-manager-title">My Wallet</h3>
-                <p>Manage wallet membership and favorites by profile.</p>
-            </div>
-            <div class="wallet-manager-controls">
-                <label for="wallet-manager-profile-select">
-                    <span>Profile</span>
-                    <select id="wallet-manager-profile-select">
-                        <option value="michael">Michael</option>
-                        <option value="jenna">Jenna</option>
-                        <option value="both">Both</option>
-                    </select>
-                </label>
-                <label for="wallet-manager-search-input">
-                    <span>Search Cards</span>
-                    <input id="wallet-manager-search-input" type="text" placeholder="Search by card name">
-                </label>
-            </div>
-            <div class="wallet-manager-actions">
-                <button id="wallet-empty-button" type="button" class="secondary-button">Empty Wallet</button>
-                <button id="wallet-quick-setup-button" type="button">Quick Setup</button>
+                <p>Favorite cards pinned for quick access.</p>
+                <button id="wallet-manage-membership-button" type="button" class="secondary-button">Manage wallet membership</button>
             </div>
             <p id="wallet-manager-note" class="wallet-manager-note"></p>
             <div id="wallet-manager-list" class="wallet-manager-list"></div>
         </section>
 
-        <details class="advanced-panel">
+        <details class="advanced-panel" id="advanced-section">
             <summary>Advanced</summary>
             <div class="actions advanced-actions">
                 <button id="export-cards-button" type="button">Export backup</button>
@@ -85,6 +68,26 @@
                 <button id="sync-cards-button" type="button">Sync From Database JSON</button>
                 <input id="import-cards-file" type="file" accept="application/json" class="hidden-file-input">
             </div>
+            <div class="wallet-manager-controls">
+                <label for="wallet-membership-profile-select">
+                    <span>Profile</span>
+                    <select id="wallet-membership-profile-select">
+                        <option value="michael">Michael</option>
+                        <option value="jenna">Jenna</option>
+                        <option value="both">Both</option>
+                    </select>
+                </label>
+                <label for="wallet-membership-search-input">
+                    <span>Search Cards</span>
+                    <input id="wallet-membership-search-input" type="text" placeholder="Search by card name">
+                </label>
+            </div>
+            <div class="wallet-manager-actions">
+                <button id="wallet-empty-button" type="button" class="secondary-button">Empty Wallet</button>
+                <button id="wallet-quick-setup-button" type="button">Quick Setup</button>
+            </div>
+            <p id="wallet-membership-note" class="wallet-manager-note"></p>
+            <div id="wallet-membership-list" class="wallet-manager-list"></div>
         </details>
 
         <div id="cards-message" class="message" aria-live="polite"></div>

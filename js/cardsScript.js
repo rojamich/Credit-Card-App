@@ -14,10 +14,14 @@ const importCardsButton = document.getElementById("import-cards-button");
 const syncCardsButton = document.getElementById("sync-cards-button");
 const importCardsFile = document.getElementById("import-cards-file");
 
-const walletManagerProfileSelect = document.getElementById("wallet-manager-profile-select");
-const walletManagerSearchInput = document.getElementById("wallet-manager-search-input");
+const walletManageMembershipButton = document.getElementById("wallet-manage-membership-button");
 const walletManagerList = document.getElementById("wallet-manager-list");
 const walletManagerNote = document.getElementById("wallet-manager-note");
+const advancedSection = document.getElementById("advanced-section");
+const walletMembershipProfileSelect = document.getElementById("wallet-membership-profile-select");
+const walletMembershipSearchInput = document.getElementById("wallet-membership-search-input");
+const walletMembershipList = document.getElementById("wallet-membership-list");
+const walletMembershipNote = document.getElementById("wallet-membership-note");
 const walletEmptyButton = document.getElementById("wallet-empty-button");
 const walletQuickSetupButton = document.getElementById("wallet-quick-setup-button");
 const walletQuickSetupModal = document.getElementById("wallet-quick-setup-modal");
@@ -366,6 +370,7 @@ function renderCards() {
             cards.splice(index + 1, 0, clone);
             renderCards();
             renderWalletManager();
+            renderWalletMembershipManager();
         };
         const deleteButton = document.createElement("button");
         deleteButton.type = "button";
@@ -376,6 +381,7 @@ function renderCards() {
             migrateWalletPrefsToIds();
             renderCards();
             renderWalletManager();
+            renderWalletMembershipManager();
             saveWalletPrefs();
         };
         actions.appendChild(editButton);
@@ -610,6 +616,7 @@ function upsertCardFromForm() {
     saveWalletPrefs();
     renderCards();
     renderWalletManager();
+    renderWalletMembershipManager();
     closeCardEditor();
 }
 
@@ -625,6 +632,7 @@ function saveCards() {
     setMessage("Card data saved locally on this device.", false);
     renderCards();
     renderWalletManager();
+    renderWalletMembershipManager();
 }
 
 function downloadJson(filename, data) {
@@ -676,6 +684,7 @@ function importCardsFromFile(event) {
             dsWriteLocalJson(cardsStorageKey, cards);
             renderCards();
             renderWalletManager();
+            renderWalletMembershipManager();
             setMessage("Cards imported and saved locally.", false);
         } catch (error) {
             setMessage(`Import failed: ${error.message}`, true);
@@ -705,6 +714,7 @@ async function syncCardsFromSource() {
         dsWriteLocalJson(cardsStorageKey, cards);
         renderCards();
         renderWalletManager();
+        renderWalletMembershipManager();
         setMessage("Cards synced from database JSON.", false);
     } catch (error) {
         setMessage(`Sync failed: ${error.message}`, true);
@@ -727,27 +737,69 @@ function setProfileWalletSet(profileKey, set) {
 }
 
 function renderWalletManager() {
-    if (!walletManagerList || !walletManagerProfileSelect) return;
-    const profileKey = walletManagerProfileSelect.value || PROFILE_MICHAEL;
+    if (!walletManagerList) return;
     walletManagerList.innerHTML = "";
-    const search = (walletManagerSearchInput.value || "").toLowerCase().trim();
+    const favoriteCards = cards
+        .filter((card) => walletPrefs.favoritesByCardId[card.id] === true)
+        .sort((a, b) => a.card.localeCompare(b.card));
+
+    if (!favoriteCards.length) {
+        walletManagerNote.textContent = "Star cards to pin them here.";
+        return;
+    }
+    walletManagerNote.textContent = "";
+
+    favoriteCards.forEach((card) => {
+        const item = document.createElement("article");
+        item.className = "wallet-manager-item";
+        const meta = document.createElement("div");
+        const title = document.createElement("h4");
+        title.textContent = card.card;
+        meta.appendChild(title);
+        const info = document.createElement("p");
+        info.textContent = `${card.id} | ${formatNetworkTier(card.network, card.tier)} | ${card.foreignTransactionFee === false ? "No FTF" : "Has FTF"}`;
+        meta.appendChild(info);
+
+        const actions = document.createElement("div");
+        actions.className = "wallet-manager-item-actions";
+        const starButton = document.createElement("button");
+        starButton.type = "button";
+        starButton.className = "wallet-star-button";
+        starButton.setAttribute("aria-pressed", "true");
+        starButton.textContent = "\u2605";
+        starButton.onclick = () => {
+            delete walletPrefs.favoritesByCardId[card.id];
+            saveWalletPrefs();
+            renderWalletManager();
+            renderWalletMembershipManager();
+        };
+        actions.appendChild(starButton);
+
+        item.appendChild(meta);
+        item.appendChild(actions);
+        walletManagerList.appendChild(item);
+    });
+}
+
+function renderWalletMembershipManager() {
+    if (!walletMembershipList || !walletMembershipProfileSelect) return;
+    const profileKey = walletMembershipProfileSelect.value || PROFILE_MICHAEL;
+    walletMembershipList.innerHTML = "";
+    const search = (walletMembershipSearchInput.value || "").toLowerCase().trim();
     const walletSet = getProfileWalletSet(profileKey);
     const bothMode = profileKey === PROFILE_BOTH;
 
     walletEmptyButton.disabled = bothMode;
     walletQuickSetupButton.disabled = bothMode;
-    walletManagerNote.textContent = bothMode
-        ? "Both = Michael + Jenna combined. Edit Michael/Jenna instead."
-        : "";
+    if (walletMembershipNote) {
+        walletMembershipNote.textContent = bothMode
+            ? "Both = Michael + Jenna combined. Edit Michael/Jenna instead."
+            : "";
+    }
 
     cards
         .filter((card) => !search || card.card.toLowerCase().includes(search) || card.id.toLowerCase().includes(search))
-        .sort((a, b) => {
-            const aFav = walletPrefs.favoritesByCardId[a.id] === true;
-            const bFav = walletPrefs.favoritesByCardId[b.id] === true;
-            if (aFav !== bFav) return aFav ? -1 : 1;
-            return a.card.localeCompare(b.card);
-        })
+        .sort((a, b) => a.card.localeCompare(b.card))
         .forEach((card) => {
             const item = document.createElement("article");
             item.className = "wallet-manager-item";
@@ -761,18 +813,6 @@ function renderWalletManager() {
 
             const actions = document.createElement("div");
             actions.className = "wallet-manager-item-actions";
-            const starButton = document.createElement("button");
-            starButton.type = "button";
-            starButton.className = "wallet-star-button";
-            starButton.setAttribute("aria-pressed", walletPrefs.favoritesByCardId[card.id] ? "true" : "false");
-            starButton.textContent = walletPrefs.favoritesByCardId[card.id] ? "\u2605" : "\u2606";
-            starButton.onclick = () => {
-                if (walletPrefs.favoritesByCardId[card.id]) delete walletPrefs.favoritesByCardId[card.id];
-                else walletPrefs.favoritesByCardId[card.id] = true;
-                saveWalletPrefs();
-                renderWalletManager();
-            };
-
             const toggleButton = document.createElement("button");
             toggleButton.type = "button";
             toggleButton.className = "wallet-toggle-button";
@@ -784,14 +824,13 @@ function renderWalletManager() {
                 if (set.has(card.id)) set.delete(card.id);
                 else set.add(card.id);
                 setProfileWalletSet(profileKey, set);
-                renderWalletManager();
+                renderWalletMembershipManager();
             };
-            actions.appendChild(starButton);
             actions.appendChild(toggleButton);
 
             item.appendChild(meta);
             item.appendChild(actions);
-            walletManagerList.appendChild(item);
+            walletMembershipList.appendChild(item);
         });
 }
 
@@ -832,7 +871,7 @@ function getGeneralRanking(requireNoFtf) {
 }
 
 function openQuickSetup() {
-    const profileKey = walletManagerProfileSelect.value;
+    const profileKey = walletMembershipProfileSelect.value;
     if (profileKey === PROFILE_BOTH) return;
     walletQuickSetupCategories.innerHTML = "";
     getKnownCategories().forEach((category) => {
@@ -856,7 +895,7 @@ function closeQuickSetup() {
 }
 
 function buildQuickSetupWallet() {
-    const profileKey = walletManagerProfileSelect.value;
+    const profileKey = walletMembershipProfileSelect.value;
     if (profileKey === PROFILE_BOTH) return;
     const selectedCategories = Array.from(walletQuickSetupCategories.querySelectorAll("input[type='checkbox']:checked"))
         .map((input) => dsNormalizeBonusKey(input.value))
@@ -907,6 +946,7 @@ function buildQuickSetupWallet() {
 
     setProfileWalletSet(profileKey, new Set(selectedIds));
     renderWalletManager();
+    renderWalletMembershipManager();
 
     const summaryLines = [`Built ${selectedIds.length} cards for ${profileKey}.`];
     selectedIds.forEach((id) => {
@@ -947,9 +987,10 @@ async function loadInitialData() {
         walletPrefs = loadWalletPrefs();
         migrateWalletPrefsToIds();
         saveWalletPrefs();
-        if (walletManagerProfileSelect) walletManagerProfileSelect.value = walletPrefs.activeProfile || PROFILE_MICHAEL;
+        if (walletMembershipProfileSelect) walletMembershipProfileSelect.value = walletPrefs.activeProfile || PROFILE_MICHAEL;
         renderCards();
         renderWalletManager();
+        renderWalletMembershipManager();
         setMessage("Card data loaded.", false);
     } catch (error) {
         setMessage(`Could not load card data: ${error.message}`, true);
@@ -1017,18 +1058,18 @@ importCardsButton.addEventListener("click", () => importCardsFile.click());
 importCardsFile.addEventListener("change", importCardsFromFile);
 syncCardsButton.addEventListener("click", syncCardsFromSource);
 
-walletManagerProfileSelect.addEventListener("change", () => {
-    walletPrefs.activeProfile = walletManagerProfileSelect.value;
+walletMembershipProfileSelect.addEventListener("change", () => {
+    walletPrefs.activeProfile = walletMembershipProfileSelect.value;
     saveWalletPrefs();
-    renderWalletManager();
+    renderWalletMembershipManager();
 });
-walletManagerSearchInput.addEventListener("input", renderWalletManager);
+walletMembershipSearchInput.addEventListener("input", renderWalletMembershipManager);
 walletEmptyButton.addEventListener("click", () => {
-    const profileKey = walletManagerProfileSelect.value;
+    const profileKey = walletMembershipProfileSelect.value;
     if (profileKey === PROFILE_BOTH) return;
     if (!confirm(`Empty wallet for ${profileKey}?`)) return;
     setProfileWalletSet(profileKey, new Set());
-    renderWalletManager();
+    renderWalletMembershipManager();
 });
 walletQuickSetupButton.addEventListener("click", openQuickSetup);
 closeWalletQuickSetupButton.addEventListener("click", closeQuickSetup);
@@ -1036,5 +1077,13 @@ walletQuickSetupModal.addEventListener("click", (event) => {
     if (event.target === walletQuickSetupModal) closeQuickSetup();
 });
 walletQuickSetupBuildButton.addEventListener("click", buildQuickSetupWallet);
+walletManageMembershipButton.addEventListener("click", () => {
+    if (advancedSection && advancedSection.tagName === "DETAILS") {
+        advancedSection.open = true;
+    }
+    if (advancedSection) {
+        advancedSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+});
 
 loadInitialData();
