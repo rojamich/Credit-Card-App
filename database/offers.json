@@ -3,6 +3,7 @@
     "id": "fred_meyer_10pct_up_to_5_2026_03_31",
     "merchantKey": "fred_meyer",
     "merchantName": "Fred Meyer",
+    "logo": "",
     "provider": "chase",
     "expires": "2026-03-31",
     "startDate": "2026-03-01",
@@ -13,7 +14,7 @@
     "minSpend": 0,
     "fixedAmount": null,
     "points": null,
-    "program": "cash",
+    "programKey": "cash",
     "attachments": [
       {
         "cardId": "freedom_unlimited",
@@ -33,6 +34,7 @@
     "id": "delta_amex_mr_1000_after_50_2026_04_15",
     "merchantKey": "delta",
     "merchantName": "Delta",
+    "logo": "",
     "provider": "amex",
     "expires": "2026-04-15",
     "startDate": "2026-03-01",
@@ -43,7 +45,7 @@
     "minSpend": 50,
     "fixedAmount": null,
     "points": 1000,
-    "program": "amex_mr",
+    "programKey": "amex",
     "attachments": [
       {
         "cardId": "amex_platinum",

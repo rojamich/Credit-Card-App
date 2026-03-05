@@ -71,17 +71,21 @@
                         <option value="other">Other</option>
                     </select>
                 </label>
-                <label>Category
-                    <select id="offers-category-select">
-                        <option value="all">All</option>
-                    </select>
-                </label>
             </div>
-            <div class="points-settings">
-                <p>Points valuation ($ per point)</p>
-                <label>Amex MR <input id="points-amex-mr" type="number" step="0.001"></label>
-                <label>Chase UR <input id="points-chase-ur" type="number" step="0.001"></label>
-                <label>Cash <input id="points-cash" type="number" step="0.001"></label>
+            <div id="offers-category-strip" class="offers-category-strip" aria-label="Offer categories"></div>
+            <details class="offers-maintenance">
+                <summary>Maintenance</summary>
+                <p class="offers-note" id="maintenance-queue-count"></p>
+                <label class="maintenance-toggle">
+                    <input id="maintenance-keep-unattached" type="checkbox">
+                    Keep offers with zero attachments
+                </label>
+                <div class="maintenance-actions">
+                    <button id="download-cleaned-offers" type="button">Download cleaned offers.json</button>
+                    <button id="clear-publish-queue" type="button">Clear publish queue</button>
+                </div>
+                <p class="offers-note">Replace <code>/database/offers.json</code> with the downloaded file, then commit.</p>
+                <div id="maintenance-queue-table" class="maintenance-queue-table"></div>
             </div>
             <p id="offers-profile-note" class="offers-note"></p>
             <p class="offers-note">Edit published offers in <code>database/offers.json</code>.</p>
@@ -93,12 +97,16 @@
     <div id="offer-popup" class="offer-popup hidden" role="dialog" aria-modal="true">
         <div class="offer-popup-panel">
             <div class="offer-popup-head">
-                <h3 id="offer-popup-title"></h3>
+                <div class="offer-popup-title-wrap">
+                    <img id="offer-popup-logo" class="offer-popup-logo hidden" alt="">
+                    <span id="offer-popup-avatar" class="offer-avatar">?</span>
+                    <h3 id="offer-popup-title"></h3>
+                </div>
                 <button id="offer-popup-close" type="button">Close</button>
             </div>
             <p id="offer-popup-meta" class="offers-note"></p>
-            <label>Spend amount
-                <input id="offer-popup-spend" type="number" min="0" step="1">
+            <label>Estimated spend
+                <input id="offer-popup-spend" type="number" min="0" step="1" value="50">
             </label>
             <div id="offer-popup-results" class="offer-results"></div>
             <details>
@@ -107,6 +115,8 @@
             </details>
         </div>
     </div>
+
+    <div id="offers-toast" class="offers-toast hidden" role="status" aria-live="polite"></div>
 
     <script src="./js/dataStore.js?v=2026-03-05"></script>
     <script src="./js/offersScript.js?v=2026-03-05"></script>

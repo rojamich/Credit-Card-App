@@ -16,6 +16,7 @@ const CATEGORY_DEFS = Object.freeze({
     streaming: { label: "Streaming" },
     public_transportation: { label: "Public Transportation" },
 });
+const BANK_VALUE_MAP = new Map();
 
 function readLocalJson(key) {
     const raw = localStorage.getItem(key);
@@ -234,7 +235,7 @@ function normalizeBanksForRuntime(payload) {
 
     const seen = new Set();
 
-    return payload
+    const normalizedBanks = payload
         .filter((bank) => bank && typeof bank === "object")
         .map((bank) => {
             const rawKey = String(bank.key ?? bank.name ?? "").trim();
@@ -255,6 +256,19 @@ function normalizeBanksForRuntime(payload) {
             seen.add(bank.key);
             return true;
         });
+
+    BANK_VALUE_MAP.clear();
+    normalizedBanks.forEach((bank) => {
+        BANK_VALUE_MAP.set(normalizeBankKey(bank.key), Number(bank.value) || 1);
+    });
+
+    return normalizedBanks;
+}
+
+function getBankValue(bankKey) {
+    const normalizedKey = normalizeBankKey(bankKey);
+    if (!normalizedKey) return 1;
+    return Number(BANK_VALUE_MAP.get(normalizedKey)) || 1;
 }
 
 function validateAndNormalizeCards(payload) {
@@ -401,9 +415,10 @@ function validateAndNormalizeOffers(payload) {
             minSpend: null,
             fixedAmount: null,
             points: null,
-            program: "",
+            programKey: "",
             aliases: [],
             notes: "",
+            logo: "",
             attachments: [],
         };
 
@@ -419,8 +434,9 @@ function validateAndNormalizeOffers(payload) {
         normalized.expires = toIsoDateOrEmpty(offer.expires);
         normalized.startDate = toIsoDateOrEmpty(offer.startDate);
         normalized.offerType = normalizeOfferType(offer.offerType);
-        normalized.program = String(offer.program || "").trim();
+        normalized.programKey = normalizeBankKey(offer.programKey || offer.program || "");
         normalized.notes = String(offer.notes || "").trim();
+        normalized.logo = String(offer.logo || offer.logoPath || "").trim();
         normalized.aliases = Array.isArray(offer.aliases) ? offer.aliases.map((alias) => String(alias || "").trim()).filter(Boolean) : [];
         normalized.categories = Array.isArray(offer.categories)
             ? offer.categories.map((key) => normalizeBonusKey(key)).filter((key) => key && key !== "default")
@@ -614,6 +630,7 @@ window.CCDataStore = {
     normalizeCardTier,
     normalizeCardId,
     normalizeOfferId,
+    getBankValue,
     ALLOWED_CARD_NETWORKS,
     ALLOWED_CARD_TIERS,
     CATEGORY_DEFS,

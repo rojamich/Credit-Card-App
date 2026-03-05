@@ -16,6 +16,7 @@ const {
     normalizeCardId: dsNormalizeCardId,
     getCategoryDefsFromCards: dsGetCategoryDefsFromCards,
     normalizeOffersForRuntime: dsNormalizeOffersForRuntime,
+    getBankValue: dsGetBankValue,
 } = window.CCDataStore;
 
 const WALLET_PREFS_STORAGE_KEY = "walletAppPrefs";
@@ -70,11 +71,8 @@ function createDefaultPrefs() {
             michael: {},
             jenna: {},
         },
-        pointsValueByProgram: {
-            amex_mr: 0.01,
-            chase_ur: 0.015,
-            cash: 0.01,
-        },
+        offerPublishQueue: [],
+        lastOfferSpend: 50,
     };
 }
 
@@ -99,10 +97,6 @@ function normalizePrefsStructure(rawPrefs) {
     const sourceUsed = source.usedOfferAttachmentsByProfile && typeof source.usedOfferAttachmentsByProfile === "object"
         ? source.usedOfferAttachmentsByProfile
         : {};
-    const sourcePoints = source.pointsValueByProgram && typeof source.pointsValueByProgram === "object"
-        ? source.pointsValueByProgram
-        : {};
-
     const fromV2Favorites = source.favoritesByCardId && typeof source.favoritesByCardId === "object"
         ? source.favoritesByCardId
         : {};
@@ -150,10 +144,8 @@ function normalizePrefsStructure(rawPrefs) {
             michael: sourceUsed.michael && typeof sourceUsed.michael === "object" ? sourceUsed.michael : {},
             jenna: sourceUsed.jenna && typeof sourceUsed.jenna === "object" ? sourceUsed.jenna : {},
         },
-        pointsValueByProgram: {
-            ...defaults.pointsValueByProgram,
-            ...(sourcePoints || {}),
-        },
+        offerPublishQueue: Array.isArray(source.offerPublishQueue) ? source.offerPublishQueue : [],
+        lastOfferSpend: Number.isFinite(Number(source.lastOfferSpend)) ? Number(source.lastOfferSpend) : defaults.lastOfferSpend,
     };
 
     return normalized;
@@ -420,11 +412,11 @@ function getBankDetails(bankName, bankData) {
     const matchedBank = bankData.find((bank) => dsNormalizeBankName(bank.key) === normalizedCardBank);
     if (matchedBank) {
         return {
-            multiplier: matchedBank.value,
+            multiplier: dsGetBankValue(matchedBank.key),
             type: matchedBank.type,
         };
     }
-    return { multiplier: 1, type: "Cash Back" };
+    return { multiplier: dsGetBankValue(bankName), type: "Cash Back" };
 }
 
 function cardPassesFilters(card) {
