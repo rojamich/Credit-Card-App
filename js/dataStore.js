@@ -2,6 +2,19 @@ const BANKS_STORAGE_KEY = "ccapp_banks_v1";
 const CARDS_STORAGE_KEY = "ccapp_cards_v1";
 const ALLOWED_CARD_NETWORKS = ["visa", "amex", "mastercard", "discover"];
 const ALLOWED_CARD_TIERS = ["standard", "signature", "infinite", "world", "world-elite"];
+const CATEGORY_DEFS = Object.freeze({
+    restaurants: { label: "Restaurants" },
+    groceries: { label: "Groceries" },
+    fuel: { label: "Fuel" },
+    travel: { label: "Travel" },
+    airfare: { label: "Airfare" },
+    rideshare: { label: "Rideshare" },
+    online_shopping: { label: "Online Shopping" },
+    foreign_transactions: { label: "Foreign Transactions" },
+    drugstore: { label: "Drugstore" },
+    streaming: { label: "Streaming" },
+    public_transportation: { label: "Public Transportation" },
+});
 
 function readLocalJson(key) {
     const raw = localStorage.getItem(key);
@@ -395,6 +408,34 @@ function normalizeCardsForRuntime(payload) {
         });
 }
 
+function getCategoryLabel(key) {
+    const normalized = normalizeBonusKey(key);
+    if (!normalized) return "";
+    if (CATEGORY_DEFS[normalized] && CATEGORY_DEFS[normalized].label) {
+        return CATEGORY_DEFS[normalized].label;
+    }
+    return prettyLabelFromKey(normalized);
+}
+
+function getCategoryDefsFromCards(payload) {
+    if (!Array.isArray(payload)) return [];
+    const set = new Set();
+    payload.forEach((card) => {
+        const bonuses = card && card.bonuses && typeof card.bonuses === "object" && !Array.isArray(card.bonuses)
+            ? card.bonuses
+            : {};
+        Object.keys(bonuses).forEach((key) => {
+            const normalized = normalizeBonusKey(key);
+            if (!normalized || normalized === "default") return;
+            set.add(normalized);
+        });
+    });
+
+    return Array.from(set)
+        .map((key) => ({ key, label: getCategoryLabel(key) }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+}
+
 async function loadDataset(storageKey, fallbackPath) {
     const localData = readLocalJson(storageKey);
     if (localData) return localData;
@@ -423,4 +464,7 @@ window.CCDataStore = {
     normalizeCardId,
     ALLOWED_CARD_NETWORKS,
     ALLOWED_CARD_TIERS,
+    CATEGORY_DEFS,
+    getCategoryDefsFromCards,
+    getCategoryLabel,
 };

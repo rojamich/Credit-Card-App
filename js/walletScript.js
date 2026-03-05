@@ -13,6 +13,7 @@ const {
     normalizeBanksForRuntime: dsNormalizeBanksForRuntime,
     prettyLabelFromKey: dsPrettyLabelFromKey,
     normalizeCardId: dsNormalizeCardId,
+    getCategoryDefsFromCards: dsGetCategoryDefsFromCards,
 } = window.CCDataStore;
 
 const WALLET_PREFS_STORAGE_KEY = "walletAppPrefs";
@@ -333,6 +334,9 @@ function formatNetworkTier(networkRaw, tierRaw) {
 }
 
 function getAllCategoriesFromCards(cardData) {
+    if (typeof dsGetCategoryDefsFromCards === "function") {
+        return dsGetCategoryDefsFromCards(cardData).map((item) => item.key);
+    }
     const categorySet = new Set();
     cardData.forEach((card) => {
         Object.keys(card.bonuses || {}).forEach((bonusKey) => {

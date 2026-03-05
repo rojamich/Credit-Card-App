@@ -73,12 +73,8 @@ const {
     normalizeCardNetwork: dsNormalizeCardNetwork,
     normalizeCardTier: dsNormalizeCardTier,
     normalizeCardId: dsNormalizeCardId,
+    getCategoryDefsFromCards: dsGetCategoryDefsFromCards,
 } = window.CCDataStore;
-
-const CURATED_CATEGORIES = [
-    "groceries", "dining", "travel", "gas", "transit", "streaming", "online_shopping",
-    "drugstore", "entertainment", "hotel", "airfare", "utilities", "wholesale_clubs", "foreign_transactions",
-];
 
 let cards = [];
 let banks = [];
@@ -240,14 +236,17 @@ function getBankByKey(key) {
 }
 
 function getKnownCategories() {
-    const set = new Set(CURATED_CATEGORIES);
+    if (typeof dsGetCategoryDefsFromCards === "function") {
+        return dsGetCategoryDefsFromCards(cards).map((item) => item.key);
+    }
+    const set = new Set();
     cards.forEach((card) => {
         Object.keys(card.bonuses || {}).forEach((key) => {
             const normalized = dsNormalizeBonusKey(key);
             if (normalized && normalized !== "default") set.add(normalized);
         });
     });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
+    return Array.from(set).sort((a, b) => dsPrettyLabelFromKey(a).localeCompare(dsPrettyLabelFromKey(b)));
 }
 
 function getCardPhoto(card) {
@@ -813,6 +812,18 @@ function renderWalletMembershipManager() {
 
             const actions = document.createElement("div");
             actions.className = "wallet-manager-item-actions";
+            const starButton = document.createElement("button");
+            starButton.type = "button";
+            starButton.className = "wallet-star-button";
+            starButton.setAttribute("aria-pressed", walletPrefs.favoritesByCardId[card.id] ? "true" : "false");
+            starButton.textContent = walletPrefs.favoritesByCardId[card.id] ? "\u2605" : "\u2606";
+            starButton.onclick = () => {
+                if (walletPrefs.favoritesByCardId[card.id]) delete walletPrefs.favoritesByCardId[card.id];
+                else walletPrefs.favoritesByCardId[card.id] = true;
+                saveWalletPrefs();
+                renderWalletManager();
+                renderWalletMembershipManager();
+            };
             const toggleButton = document.createElement("button");
             toggleButton.type = "button";
             toggleButton.className = "wallet-toggle-button";
@@ -826,6 +837,7 @@ function renderWalletMembershipManager() {
                 setProfileWalletSet(profileKey, set);
                 renderWalletMembershipManager();
             };
+            actions.appendChild(starButton);
             actions.appendChild(toggleButton);
 
             item.appendChild(meta);
