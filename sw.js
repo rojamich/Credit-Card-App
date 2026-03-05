@@ -1,4 +1,4 @@
-const CACHE_NAME = "walletapp-v6";
+const CACHE_NAME = "walletapp-v7";
 
 const CORE_ASSETS = [
     "./",
@@ -99,6 +99,16 @@ function isImageRequest(request) {
     return /\.(png|jpg|jpeg|gif|svg|ico|webp)$/i.test(url.pathname);
 }
 
+function isDatabaseRequest(request) {
+    const url = new URL(request.url);
+    return url.pathname.startsWith("/database/");
+}
+
+function isDebugRequest(request) {
+    const url = new URL(request.url);
+    return url.searchParams.get("debug") === "1";
+}
+
 async function matchRequestOrPath(cache, request) {
     const direct = await cache.match(request);
     if (direct) return direct;
@@ -129,6 +139,30 @@ async function networkFirst(request, fallbackUrl) {
     }
 }
 
+async function databaseNetworkFirst(request) {
+    const cache = await caches.open(CACHE_NAME);
+    const debug = isDebugRequest(request);
+
+    try {
+        // Bypass browser HTTP cache for database payload freshness.
+        const freshRequest = new Request(request, { cache: "no-store" });
+        const networkResponse = await fetch(freshRequest);
+        if (networkResponse && networkResponse.ok) {
+            await cache.put(request, networkResponse.clone());
+        }
+        if (debug) console.log("[SW] /database served from network:", new URL(request.url).pathname);
+        return networkResponse;
+    } catch (error) {
+        const cached = await matchRequestOrPath(cache, request);
+        if (cached) {
+            if (debug) console.log("[SW] /database served from cache:", new URL(request.url).pathname);
+            return cached;
+        }
+        if (debug) console.log("[SW] /database miss (network+cache):", new URL(request.url).pathname);
+        throw error;
+    }
+}
+
 async function cacheFirst(request) {
     const cache = await caches.open(CACHE_NAME);
     const cached = await matchRequestOrPath(cache, request);
@@ -147,6 +181,11 @@ self.addEventListener("fetch", (event) => {
 
     const url = new URL(request.url);
     if (url.origin !== self.location.origin) return;
+
+    if (isDatabaseRequest(request)) {
+        event.respondWith(databaseNetworkFirst(request));
+        return;
+    }
 
     if (isHtmlNavigation(request)) {
         event.respondWith(networkFirst(request, "./offline.html"));
