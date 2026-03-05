@@ -742,7 +742,12 @@ function renderWalletManager() {
 
     cards
         .filter((card) => !search || card.card.toLowerCase().includes(search) || card.id.toLowerCase().includes(search))
-        .sort((a, b) => a.card.localeCompare(b.card))
+        .sort((a, b) => {
+            const aFav = walletPrefs.favoritesByCardId[a.id] === true;
+            const bFav = walletPrefs.favoritesByCardId[b.id] === true;
+            if (aFav !== bFav) return aFav ? -1 : 1;
+            return a.card.localeCompare(b.card);
+        })
         .forEach((card) => {
             const item = document.createElement("article");
             item.className = "wallet-manager-item";

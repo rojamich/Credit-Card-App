@@ -481,6 +481,13 @@ function selectCategory(categoryKey) {
     showBestCard(categoryKey, walletState.cardData, walletState.bankData);
 }
 
+function closePopupAndClearSelection() {
+    const popup = document.querySelector(".popup");
+    if (popup) popup.remove();
+    walletState.selectedCategoryKey = null;
+    updateBonusSelectionHighlight(null);
+}
+
 function createStatCard(label, value, useBadge) {
     const stat = document.createElement("div");
     stat.className = "popup-stat";
@@ -746,10 +753,8 @@ function attachWalletControlEvents() {
         profileSelect.addEventListener("change", () => {
             walletState.prefs.activeProfile = profileSelect.value;
             saveWalletPrefs();
+            closePopupAndClearSelection();
             refreshWalletUi();
-            if (walletState.selectedCategoryKey) {
-                showBestCard(walletState.selectedCategoryKey, walletState.cardData, walletState.bankData);
-            }
         });
     }
     if (filterSelect && filterSelect.dataset.bound !== "true") {
@@ -757,9 +762,8 @@ function attachWalletControlEvents() {
         filterSelect.addEventListener("change", () => {
             walletState.prefs.activeFilter = filterSelect.value;
             saveWalletPrefs();
-            if (walletState.selectedCategoryKey) {
-                showBestCard(walletState.selectedCategoryKey, walletState.cardData, walletState.bankData);
-            }
+            closePopupAndClearSelection();
+            refreshWalletUi();
         });
     }
     if (noFtfToggle && noFtfToggle.dataset.bound !== "true") {
@@ -767,9 +771,8 @@ function attachWalletControlEvents() {
         noFtfToggle.addEventListener("change", () => {
             walletState.prefs.requireNoFtf = Boolean(noFtfToggle.checked);
             saveWalletPrefs();
-            if (walletState.selectedCategoryKey) {
-                showBestCard(walletState.selectedCategoryKey, walletState.cardData, walletState.bankData);
-            }
+            closePopupAndClearSelection();
+            refreshWalletUi();
         });
     }
     if (favoriteCategoriesGrid && favoriteCategoriesGrid.dataset.bound !== "true") {
