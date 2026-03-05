@@ -42,10 +42,10 @@
         <section class="quick-categories" aria-labelledby="quick-categories-title">
             <div class="quick-categories-head">
                 <h2 id="quick-categories-title">Favorite Categories</h2>
-                <p>Shortcut categories from your favorite cards.</p>
+                <p>Pinned shortcuts for the selected profile.</p>
             </div>
             <div id="favorite-categories-grid" class="favorite-categories-grid"></div>
-            <p id="favorite-categories-empty" class="favorite-categories-empty hidden">⭐ Add favorite cards to pin categories here.</p>
+            <p id="favorite-categories-empty" class="favorite-categories-empty hidden">Pin categories to show shortcuts here.</p>
             <div class="wallet-controls">
                 <div class="wallet-selectors">
                     <label class="wallet-select-wrap" for="wallet-profile-select">
@@ -66,6 +66,10 @@
                         </select>
                     </label>
                 </div>
+                <label class="wallet-toggle-row">
+                    <input id="wallet-no-ftf-toggle" type="checkbox">
+                    <span>International mode (No foreign transaction fee)</span>
+                </label>
                 <p id="wallet-profile-note" class="wallet-status" aria-live="polite"></p>
                 <div class="wallet-actions">
                     <button id="refresh-wallet-data-button" type="button" class="wallet-action-button">Refresh data</button>
@@ -74,7 +78,6 @@
                 <p id="wallet-last-sync" class="wallet-status" aria-live="polite"></p>
                 <p id="wallet-controls-message" class="wallet-status" aria-live="polite"></p>
             </div>
-            <div id="wallet-cards-grid" class="wallet-cards-grid"></div>
         </section>
         <div class="bonus-container" id="bonus-container"></div>
     </main>

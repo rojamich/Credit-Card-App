@@ -12,12 +12,12 @@ const {
     normalizeCardsForRuntime: dsNormalizeCardsForRuntime,
     normalizeBanksForRuntime: dsNormalizeBanksForRuntime,
     prettyLabelFromKey: dsPrettyLabelFromKey,
+    normalizeCardId: dsNormalizeCardId,
 } = window.CCDataStore;
 
 const WALLET_PREFS_STORAGE_KEY = "walletAppPrefs";
 const LAST_SYNC_STORAGE_KEY = "wallet.lastSync";
 const DEFAULT_ONLY_CATEGORY_KEY = "__default__";
-const MAX_FAVORITE_CATEGORIES = 8;
 const PROFILE_MICHAEL = "michael";
 const PROFILE_JENNA = "jenna";
 const PROFILE_BOTH = "both";
@@ -37,24 +37,30 @@ const walletState = {
 
 const profileSelect = document.getElementById("wallet-profile-select");
 const filterSelect = document.getElementById("wallet-filter-select");
+const noFtfToggle = document.getElementById("wallet-no-ftf-toggle");
 const profileNoteEl = document.getElementById("wallet-profile-note");
 const favoriteCategoriesGrid = document.getElementById("favorite-categories-grid");
 const favoriteCategoriesEmpty = document.getElementById("favorite-categories-empty");
-const walletCardsGrid = document.getElementById("wallet-cards-grid");
 const refreshDataButton = document.getElementById("refresh-wallet-data-button");
 const resetDataButton = document.getElementById("reset-wallet-data-button");
 const controlsMessageEl = document.getElementById("wallet-controls-message");
 const lastSyncEl = document.getElementById("wallet-last-sync");
+const bonusContainer = document.getElementById("bonus-container");
 
 function createDefaultPrefs() {
     return {
-        version: 1,
+        version: 2,
         activeProfile: PROFILE_MICHAEL,
         activeFilter: FILTER_ALL,
-        favoritesByCardKey: {},
+        requireNoFtf: false,
+        favoritesByCardId: {},
         profiles: {
-            michael: { walletCardKeys: [] },
-            jenna: { walletCardKeys: [] },
+            michael: { walletCardIds: [] },
+            jenna: { walletCardIds: [] },
+        },
+        pinnedCategoriesByProfile: {
+            michael: [],
+            jenna: [],
         },
     };
 }
@@ -64,32 +70,64 @@ function asStringArray(value) {
     return value.map((item) => String(item || "").trim()).filter(Boolean);
 }
 
-function normalizePrefs(rawPrefs) {
+function asCategoryArray(value) {
+    return asStringArray(value)
+        .map((item) => dsNormalizeBonusKey(item))
+        .filter((item) => item && item !== "default");
+}
+
+function normalizePrefsStructure(rawPrefs) {
     const defaults = createDefaultPrefs();
     const source = rawPrefs && typeof rawPrefs === "object" ? rawPrefs : {};
     const sourceProfiles = source.profiles && typeof source.profiles === "object" ? source.profiles : {};
-    const sourceFavorites = source.favoritesByCardKey && typeof source.favoritesByCardKey === "object"
+    const sourcePins = source.pinnedCategoriesByProfile && typeof source.pinnedCategoriesByProfile === "object"
+        ? source.pinnedCategoriesByProfile
+        : {};
+
+    const fromV2Favorites = source.favoritesByCardId && typeof source.favoritesByCardId === "object"
+        ? source.favoritesByCardId
+        : {};
+    const fromV1Favorites = source.favoritesByCardKey && typeof source.favoritesByCardKey === "object"
         ? source.favoritesByCardKey
         : {};
 
+    const mergedFavorites = {};
+    Object.keys(fromV2Favorites).forEach((cardId) => {
+        if (fromV2Favorites[cardId]) mergedFavorites[String(cardId)] = true;
+    });
+    Object.keys(fromV1Favorites).forEach((legacyKey) => {
+        if (fromV1Favorites[legacyKey]) mergedFavorites[String(legacyKey)] = true;
+    });
+
     const normalized = {
-        version: 1,
+        version: 2,
         activeProfile: [PROFILE_MICHAEL, PROFILE_JENNA, PROFILE_BOTH].includes(source.activeProfile)
             ? source.activeProfile
             : defaults.activeProfile,
         activeFilter: [FILTER_ALL, FILTER_WALLET, FILTER_FAVORITES, FILTER_FAVORITES_WALLET].includes(source.activeFilter)
             ? source.activeFilter
             : defaults.activeFilter,
-        favoritesByCardKey: {},
+        requireNoFtf: Boolean(source.requireNoFtf),
+        favoritesByCardId: mergedFavorites,
         profiles: {
-            michael: { walletCardKeys: asStringArray(sourceProfiles.michael && sourceProfiles.michael.walletCardKeys) },
-            jenna: { walletCardKeys: asStringArray(sourceProfiles.jenna && sourceProfiles.jenna.walletCardKeys) },
+            michael: {
+                walletCardIds: [
+                    ...asStringArray(sourceProfiles.michael && sourceProfiles.michael.walletCardIds),
+                    ...asStringArray(sourceProfiles.michael && sourceProfiles.michael.walletCardKeys),
+                ],
+            },
+            jenna: {
+                walletCardIds: [
+                    ...asStringArray(sourceProfiles.jenna && sourceProfiles.jenna.walletCardIds),
+                    ...asStringArray(sourceProfiles.jenna && sourceProfiles.jenna.walletCardKeys),
+                ],
+            },
+        },
+        pinnedCategoriesByProfile: {
+            michael: asCategoryArray(sourcePins.michael),
+            jenna: asCategoryArray(sourcePins.jenna),
         },
     };
-
-    Object.keys(sourceFavorites).forEach((cardKey) => {
-        if (sourceFavorites[cardKey]) normalized.favoritesByCardKey[String(cardKey)] = true;
-    });
 
     return normalized;
 }
@@ -101,9 +139,8 @@ function loadWalletPrefs() {
             walletState.isFreshPrefs = true;
             return createDefaultPrefs();
         }
-        const parsed = JSON.parse(raw);
         walletState.isFreshPrefs = false;
-        return normalizePrefs(parsed);
+        return normalizePrefsStructure(JSON.parse(raw));
     } catch (error) {
         walletState.isFreshPrefs = true;
         return createDefaultPrefs();
@@ -133,8 +170,7 @@ function formatTimestamp(isoValue) {
 
 function renderLastSync() {
     if (!lastSyncEl) return;
-    const raw = localStorage.getItem(LAST_SYNC_STORAGE_KEY);
-    lastSyncEl.textContent = `Last synced: ${formatTimestamp(raw)}`;
+    lastSyncEl.textContent = `Last synced: ${formatTimestamp(localStorage.getItem(LAST_SYNC_STORAGE_KEY))}`;
 }
 
 function prettyLabelFromKey(key) {
@@ -149,165 +185,228 @@ function prettyLabelFromKey(key) {
         .join(" ");
 }
 
-function getCardStorageBaseKey(card) {
-    const explicit = dsNormalizeBonusKey(card.key || card.cardKey || "");
-    if (explicit) return explicit;
-    const fromName = dsNormalizeBonusKey(card.card || card.name || "");
-    return fromName || "card";
+function getLegacyCardKey(card, counts, seen) {
+    const base = dsNormalizeBonusKey(card.card || card.name || "") || "card";
+    const duplicates = counts.get(base) || 0;
+    let legacyKey = base;
+    if (duplicates > 1) {
+        const bankKey = dsNormalizeBonusKey(dsNormalizeBankKey(card.bank || "")) || "bank";
+        legacyKey = `${base}__${bankKey}`;
+    }
+    let next = legacyKey;
+    let suffix = 2;
+    while (seen.has(next)) {
+        next = `${legacyKey}__${suffix}`;
+        suffix += 1;
+    }
+    seen.add(next);
+    return next;
 }
 
-function applyCardStorageKeys(cards) {
-    const keyCounts = new Map();
+function applyCardRuntimeFields(cards) {
+    const idSet = new Set();
+    const legacyCounts = new Map();
     cards.forEach((card) => {
-        const baseKey = getCardStorageBaseKey(card);
-        keyCounts.set(baseKey, (keyCounts.get(baseKey) || 0) + 1);
+        const base = dsNormalizeBonusKey(card.card || card.name || "") || "card";
+        legacyCounts.set(base, (legacyCounts.get(base) || 0) + 1);
     });
+    const seenLegacy = new Set();
 
-    const usedKeys = new Set();
     return cards.map((card, index) => {
-        const baseKey = getCardStorageBaseKey(card);
-        let cardKey = baseKey;
-
-        if ((keyCounts.get(baseKey) || 0) > 1) {
-            const bankKey = dsNormalizeBonusKey(dsNormalizeBankKey(card.bank || "")) || "bank";
-            cardKey = `${baseKey}__${bankKey}`;
-        }
-
-        let attempt = cardKey;
+        const baseId = dsNormalizeCardId(card.id || card.cardId || card.key || card.card || "") || `card_${index + 1}`;
+        let id = baseId;
         let suffix = 2;
-        while (usedKeys.has(attempt)) {
-            attempt = `${cardKey}__${suffix}`;
+        while (idSet.has(id)) {
+            id = `${baseId}_${suffix}`;
             suffix += 1;
         }
-        usedKeys.add(attempt);
+        idSet.add(id);
 
-        return { ...card, _walletCardKey: attempt, _walletCardIndex: index };
+        const legacyKey = getLegacyCardKey(card, legacyCounts, seenLegacy);
+        return { ...card, id, _legacyKey: legacyKey };
     });
 }
 
-function getAllCategoriesFromCards(cardData) {
-    const categorySet = new Set();
-    cardData.forEach((card) => {
-        const bonuses = card.bonuses || {};
-        Object.keys(bonuses).forEach((bonusKey) => {
-            const normalizedKey = dsNormalizeBonusKey(bonusKey);
-            if (!normalizedKey || normalizedKey === "default") return;
-            categorySet.add(normalizedKey);
-        });
+function migratePrefsCardRefs() {
+    const idByAlias = new Map();
+    walletState.cardData.forEach((card) => {
+        idByAlias.set(card.id, card.id);
+        idByAlias.set(card._legacyKey, card.id);
+        const fromName = dsNormalizeBonusKey(card.card || "");
+        if (fromName && !idByAlias.has(fromName)) idByAlias.set(fromName, card.id);
     });
-    return Array.from(categorySet);
-}
 
-function getFavoriteMap() {
-    return walletState.prefs.favoritesByCardKey || {};
-}
+    const nextFavorites = {};
+    Object.keys(walletState.prefs.favoritesByCardId || {}).forEach((key) => {
+        if (!walletState.prefs.favoritesByCardId[key]) return;
+        const mapped = idByAlias.get(String(key)) || "";
+        if (mapped) nextFavorites[mapped] = true;
+    });
+    walletState.prefs.favoritesByCardId = nextFavorites;
 
-function isFavoriteCard(cardKey) {
-    return Boolean(getFavoriteMap()[cardKey]);
-}
+    [PROFILE_MICHAEL, PROFILE_JENNA].forEach((profileKey) => {
+        const currentIds = asStringArray(walletState.prefs.profiles[profileKey].walletCardIds);
+        const migrated = currentIds
+            .map((key) => idByAlias.get(key) || "")
+            .filter(Boolean);
+        walletState.prefs.profiles[profileKey].walletCardIds = Array.from(new Set(migrated));
+    });
 
-function setFavoriteCard(cardKey, shouldFavorite) {
-    const favorites = getFavoriteMap();
-    if (shouldFavorite) favorites[cardKey] = true;
-    else delete favorites[cardKey];
+    if (
+        walletState.isFreshPrefs
+        && walletState.prefs.profiles.michael.walletCardIds.length === 0
+        && walletState.prefs.profiles.jenna.walletCardIds.length === 0
+    ) {
+        walletState.prefs.profiles.michael.walletCardIds = walletState.cardData
+            .filter((card) => card.inWallet !== false)
+            .map((card) => card.id);
+    }
+
     saveWalletPrefs();
 }
 
 function getProfileWalletSet(profileKey) {
     if (profileKey === PROFILE_BOTH) {
-        const michael = new Set(walletState.prefs.profiles.michael.walletCardKeys);
-        walletState.prefs.profiles.jenna.walletCardKeys.forEach((cardKey) => michael.add(cardKey));
-        return michael;
+        const union = new Set(walletState.prefs.profiles.michael.walletCardIds);
+        walletState.prefs.profiles.jenna.walletCardIds.forEach((id) => union.add(id));
+        return union;
     }
     const profile = walletState.prefs.profiles[profileKey];
-    return new Set(profile ? profile.walletCardKeys : []);
+    return new Set(profile ? profile.walletCardIds : []);
 }
 
-function setProfileWalletSet(profileKey, nextSet) {
-    if (profileKey === PROFILE_BOTH) return;
-    if (!walletState.prefs.profiles[profileKey]) return;
-    walletState.prefs.profiles[profileKey].walletCardKeys = Array.from(nextSet);
+function isFavoriteCard(cardId) {
+    return Boolean(walletState.prefs.favoritesByCardId[cardId]);
+}
+
+function setFavoriteCard(cardId, isFavorite) {
+    if (isFavorite) walletState.prefs.favoritesByCardId[cardId] = true;
+    else delete walletState.prefs.favoritesByCardId[cardId];
     saveWalletPrefs();
 }
 
-function isCardInActiveWallet(cardKey) {
-    const activeProfile = walletState.prefs.activeProfile;
-    return getProfileWalletSet(activeProfile).has(cardKey);
+function getPinnedForProfile(profileKey) {
+    return asCategoryArray(walletState.prefs.pinnedCategoriesByProfile[profileKey]);
 }
 
-function toggleCardInActiveWallet(cardKey) {
-    const activeProfile = walletState.prefs.activeProfile;
-    if (activeProfile === PROFILE_BOTH) return;
-    const set = getProfileWalletSet(activeProfile);
-    if (set.has(cardKey)) set.delete(cardKey);
-    else set.add(cardKey);
-    setProfileWalletSet(activeProfile, set);
+function getPinnedForActiveProfile() {
+    if (walletState.prefs.activeProfile === PROFILE_BOTH) {
+        const combined = new Set(getPinnedForProfile(PROFILE_MICHAEL));
+        getPinnedForProfile(PROFILE_JENNA).forEach((key) => combined.add(key));
+        return Array.from(combined);
+    }
+    return getPinnedForProfile(walletState.prefs.activeProfile);
 }
 
-function seedWalletFromLegacyInWalletIfNeeded() {
-    if (!walletState.isFreshPrefs) return;
-    const michaelSet = new Set(walletState.prefs.profiles.michael.walletCardKeys);
-    if (michaelSet.size > 0) return;
-    walletState.cardData.forEach((card) => {
-        if (card.inWallet !== false) michaelSet.add(card._walletCardKey);
-    });
-    walletState.prefs.profiles.michael.walletCardKeys = Array.from(michaelSet);
+function isPinnedCategory(categoryKey) {
+    return getPinnedForActiveProfile().includes(categoryKey);
+}
+
+function togglePinnedCategory(categoryKey) {
+    const profileKey = walletState.prefs.activeProfile;
+    if (profileKey === PROFILE_BOTH) return;
+    const current = new Set(getPinnedForProfile(profileKey));
+    if (current.has(categoryKey)) current.delete(categoryKey);
+    else current.add(categoryKey);
+    walletState.prefs.pinnedCategoriesByProfile[profileKey] = Array.from(current);
     saveWalletPrefs();
 }
 
 function formatNetworkTier(networkRaw, tierRaw) {
-    const network = String(networkRaw || "").toLowerCase();
-    const tier = String(tierRaw || "").toLowerCase();
+    const network = String(networkRaw || "").trim().toLowerCase();
+    const tier = String(tierRaw || "").trim().toLowerCase();
+    const networkTitle = network ? network.charAt(0).toUpperCase() + network.slice(1) : "Unknown";
 
-    const networkLabelMap = {
-        visa: "Visa",
-        amex: "Amex",
-        mastercard: "Mastercard",
-        discover: "Discover",
-    };
-    const tierLabelMap = {
-        standard: "Standard",
-        signature: "Signature",
-        infinite: "Infinite",
-        world: "World",
-        "world-elite": "World Elite",
-    };
-
-    const networkLabel = networkLabelMap[network] || "Unknown";
     if (network === "amex") return "Amex";
-
-    const tierLabel = tierLabelMap[tier] || "";
-    if (!tierLabel || tier === "standard") return networkLabel;
-    return `${networkLabel} ${tierLabel}`;
+    if (network === "discover") return "Discover";
+    if (network === "visa" || network === "mastercard") {
+        if (!tier || tier === "standard") return networkTitle;
+        const tierLabel = {
+            signature: "Signature",
+            infinite: "Infinite",
+            world: "World",
+            "world-elite": "World Elite",
+        }[tier] || (tier.charAt(0).toUpperCase() + tier.slice(1));
+        return `${networkTitle} ${tierLabel}`;
+    }
+    return networkTitle;
 }
 
-function getFavoriteCategoriesFromCards() {
-    const counts = new Map();
-    walletState.cardData.forEach((card) => {
-        if (!isFavoriteCard(card._walletCardKey)) return;
+function getAllCategoriesFromCards(cardData) {
+    const categorySet = new Set();
+    cardData.forEach((card) => {
         Object.keys(card.bonuses || {}).forEach((bonusKey) => {
             const normalized = dsNormalizeBonusKey(bonusKey);
             if (!normalized || normalized === "default") return;
-            counts.set(normalized, (counts.get(normalized) || 0) + 1);
+            categorySet.add(normalized);
         });
     });
+    return Array.from(categorySet);
+}
 
-    return Array.from(counts.entries())
-        .sort((a, b) => {
-            if (b[1] !== a[1]) return b[1] - a[1];
-            return prettyLabelFromKey(a[0]).localeCompare(prettyLabelFromKey(b[0]));
-        })
-        .slice(0, MAX_FAVORITE_CATEGORIES)
-        .map(([key]) => key);
+function sortBonuses(bonuses) {
+    return bonuses.slice().sort((a, b) => prettyLabelFromKey(a).localeCompare(prettyLabelFromKey(b)));
+}
+
+function getBankDetails(bankName, bankData) {
+    const normalizedCardBank = dsNormalizeBankName(bankName);
+    const matchedBank = bankData.find((bank) => dsNormalizeBankName(bank.key) === normalizedCardBank);
+    if (matchedBank) {
+        return {
+            multiplier: matchedBank.value,
+            type: matchedBank.type,
+        };
+    }
+    return { multiplier: 1, type: "Cash Back" };
+}
+
+function cardPassesFilters(card) {
+    const inWallet = getProfileWalletSet(walletState.prefs.activeProfile).has(card.id);
+    const favorite = isFavoriteCard(card.id);
+
+    let passesMain = true;
+    switch (walletState.prefs.activeFilter) {
+        case FILTER_WALLET:
+            passesMain = inWallet;
+            break;
+        case FILTER_FAVORITES:
+            passesMain = favorite;
+            break;
+        case FILTER_FAVORITES_WALLET:
+            passesMain = favorite && inWallet;
+            break;
+        default:
+            passesMain = true;
+            break;
+    }
+    if (!passesMain) return false;
+    if (walletState.prefs.requireNoFtf && card.foreignTransactionFee !== false) return false;
+    return true;
+}
+
+function getEffectiveCardsForRanking(cards) {
+    return cards.filter(cardPassesFilters);
+}
+
+function renderProfileUi() {
+    if (profileSelect) profileSelect.value = walletState.prefs.activeProfile;
+    if (filterSelect) filterSelect.value = walletState.prefs.activeFilter;
+    if (noFtfToggle) noFtfToggle.checked = walletState.prefs.requireNoFtf;
+    if (!profileNoteEl) return;
+    if (walletState.prefs.activeProfile === PROFILE_BOTH) {
+        profileNoteEl.textContent = "Both uses Michael + Jenna cards. Switch profiles to edit pinned categories.";
+        return;
+    }
+    profileNoteEl.textContent = "";
 }
 
 function renderFavoriteCategories() {
     if (!favoriteCategoriesGrid || !favoriteCategoriesEmpty) return;
-    const categories = getFavoriteCategoriesFromCards();
+    const pinned = getPinnedForActiveProfile();
     favoriteCategoriesGrid.innerHTML = "";
-    favoriteCategoriesEmpty.classList.toggle("hidden", categories.length > 0);
+    favoriteCategoriesEmpty.classList.toggle("hidden", pinned.length > 0);
 
-    categories.forEach((categoryKey) => {
+    pinned.forEach((categoryKey) => {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "favorite-category-chip";
@@ -317,9 +416,7 @@ function renderFavoriteCategories() {
         icon.className = "favorite-category-icon";
         icon.src = `./logo/cardBonusesIcons/${categoryKey}-icon.png`;
         icon.alt = "";
-        icon.onerror = () => {
-            icon.src = "./logo/cardBonusesIcons/default-icon.png";
-        };
+        icon.onerror = () => { icon.src = "./logo/cardBonusesIcons/default-icon.png"; };
 
         const label = document.createElement("span");
         label.textContent = prettyLabelFromKey(categoryKey);
@@ -330,182 +427,51 @@ function renderFavoriteCategories() {
     });
 }
 
-function sortBonuses(bonuses) {
-    return bonuses.slice().sort((a, b) => prettyLabelFromKey(a).localeCompare(prettyLabelFromKey(b)));
+function updateBonusSelectionHighlight(selectedCategoryKey) {
+    document.querySelectorAll(".bonus-box").forEach((box) => {
+        box.classList.toggle("is-selected", box.dataset.bonus === selectedCategoryKey);
+    });
 }
 
-function renderBonuses(bonuses) {
-    const container = document.getElementById("bonus-container");
-    if (!container) return;
-    container.innerHTML = "";
+function renderBonuses(categories) {
+    if (!bonusContainer) return;
+    bonusContainer.innerHTML = "";
+    const activePins = new Set(getPinnedForActiveProfile());
+    const canEditPins = walletState.prefs.activeProfile !== PROFILE_BOTH;
 
-    bonuses.forEach((bonus) => {
+    categories.forEach((bonus) => {
         const normalizedBonus = dsNormalizeBonusKey(bonus);
         if (!normalizedBonus) return;
 
         const box = document.createElement("div");
         box.className = "bonus-box";
         box.dataset.bonus = normalizedBonus;
-        box.addEventListener("click", () => {
-            selectCategory(normalizedBonus);
-        });
+        if (activePins.has(normalizedBonus)) box.classList.add("is-pinned");
+
+        const pinButton = document.createElement("button");
+        pinButton.type = "button";
+        pinButton.className = "bonus-pin";
+        pinButton.dataset.action = "toggle-pin";
+        pinButton.dataset.category = normalizedBonus;
+        pinButton.disabled = !canEditPins;
+        pinButton.setAttribute("aria-pressed", activePins.has(normalizedBonus) ? "true" : "false");
+        pinButton.title = canEditPins ? "Pin category shortcut" : "Switch to Michael or Jenna to edit pins";
+        pinButton.textContent = activePins.has(normalizedBonus) ? "\u2605" : "\u2606";
 
         const logo = document.createElement("img");
         logo.className = "bonus-logo";
         logo.src = `./logo/cardBonusesIcons/${normalizedBonus}-icon.png`;
         logo.alt = `${prettyLabelFromKey(normalizedBonus)} icon`;
-        logo.onerror = () => {
-            logo.src = "./logo/cardBonusesIcons/default-icon.png";
-        };
+        logo.onerror = () => { logo.src = "./logo/cardBonusesIcons/default-icon.png"; };
 
         const name = document.createElement("span");
         name.className = "bonus-name";
         name.textContent = prettyLabelFromKey(normalizedBonus);
 
+        box.appendChild(pinButton);
         box.appendChild(logo);
         box.appendChild(name);
-        container.appendChild(box);
-    });
-}
-
-function updateBonusSelectionHighlight(selectedCategoryKey) {
-    const bonusBoxes = document.querySelectorAll(".bonus-box");
-    bonusBoxes.forEach((box) => {
-        box.classList.toggle("is-selected", box.dataset.bonus === selectedCategoryKey);
-    });
-}
-
-function getBankDetails(bankName, bankData) {
-    const normalizedCardBank = dsNormalizeBankName(bankName);
-    const matchedBank = bankData.find((bank) => dsNormalizeBankName(bank.key) === normalizedCardBank);
-
-    if (matchedBank) {
-        return {
-            multiplier: matchedBank.value,
-            type: matchedBank.type,
-            unknownBank: false,
-            displayName: matchedBank.label || matchedBank.key,
-            key: matchedBank.key,
-        };
-    }
-
-    return {
-        multiplier: 1,
-        type: "Cash Back",
-        unknownBank: true,
-        displayName: String(bankName || "").trim(),
-        key: String(bankName || "").trim(),
-    };
-}
-
-function cardPassesActiveFilter(card) {
-    const isWallet = isCardInActiveWallet(card._walletCardKey);
-    const isFavorite = isFavoriteCard(card._walletCardKey);
-
-    switch (walletState.prefs.activeFilter) {
-        case FILTER_WALLET:
-            return isWallet;
-        case FILTER_FAVORITES:
-            return isFavorite;
-        case FILTER_FAVORITES_WALLET:
-            return isFavorite && isWallet;
-        case FILTER_ALL:
-        default:
-            return true;
-    }
-}
-
-function getEffectiveCardsForRanking(allCards) {
-    return allCards.filter(cardPassesActiveFilter);
-}
-
-function renderProfileUi() {
-    if (profileSelect) profileSelect.value = walletState.prefs.activeProfile;
-    if (filterSelect) filterSelect.value = walletState.prefs.activeFilter;
-    if (profileNoteEl) {
-        profileNoteEl.textContent = walletState.prefs.activeProfile === PROFILE_BOTH
-            ? "Both uses Michael + Jenna cards."
-            : "";
-    }
-}
-
-function createWalletCardMeta(text) {
-    const p = document.createElement("p");
-    p.className = "wallet-card-meta";
-    p.textContent = text;
-    return p;
-}
-
-function renderWalletCardsGrid() {
-    if (!walletCardsGrid) return;
-    walletCardsGrid.innerHTML = "";
-
-    const filteredCards = walletState.cardData.filter(cardPassesActiveFilter);
-    const cardsToRender = filteredCards;
-
-    if (!cardsToRender.length) {
-        const empty = document.createElement("p");
-        empty.className = "wallet-card-meta";
-        empty.textContent = "No cards match this filter.";
-        walletCardsGrid.appendChild(empty);
-        return;
-    }
-
-    cardsToRender.forEach((card) => {
-        const item = document.createElement("article");
-        item.className = "wallet-card-item";
-        item.dataset.cardKey = card._walletCardKey;
-
-        const image = document.createElement("img");
-        image.className = "wallet-card-image";
-        image.src = card.photoPath || "./logo/cardBonusesIcons/default-icon.png";
-        image.alt = card.card;
-        image.onerror = () => {
-            image.src = "./logo/cardBonusesIcons/default-icon.png";
-        };
-
-        const body = document.createElement("div");
-        body.className = "wallet-card-body";
-
-        const header = document.createElement("div");
-        header.className = "wallet-card-head";
-
-        const name = document.createElement("h3");
-        name.className = "wallet-card-name";
-        name.textContent = card.card;
-
-        const favoriteButton = document.createElement("button");
-        favoriteButton.type = "button";
-        favoriteButton.className = "wallet-card-star";
-        favoriteButton.dataset.action = "toggle-favorite";
-        favoriteButton.dataset.cardKey = card._walletCardKey;
-        favoriteButton.setAttribute("aria-label", `Favorite ${card.card}`);
-        favoriteButton.setAttribute("aria-pressed", isFavoriteCard(card._walletCardKey) ? "true" : "false");
-        favoriteButton.textContent = isFavoriteCard(card._walletCardKey) ? "\u2605" : "\u2606";
-
-        header.appendChild(name);
-        header.appendChild(favoriteButton);
-
-        const badge = document.createElement("span");
-        badge.className = "wallet-network-badge";
-        badge.textContent = formatNetworkTier(card.network, card.tier);
-
-        const walletToggle = document.createElement("button");
-        walletToggle.type = "button";
-        walletToggle.className = "wallet-toggle-button";
-        walletToggle.dataset.action = "toggle-wallet";
-        walletToggle.dataset.cardKey = card._walletCardKey;
-        walletToggle.disabled = walletState.prefs.activeProfile === PROFILE_BOTH;
-        walletToggle.textContent = isCardInActiveWallet(card._walletCardKey) ? "In Wallet" : "Add To Wallet";
-
-        body.appendChild(header);
-        body.appendChild(badge);
-        body.appendChild(createWalletCardMeta(`Bank: ${card.bank}`));
-        body.appendChild(walletToggle);
-
-        item.appendChild(image);
-        item.appendChild(body);
-        walletCardsGrid.appendChild(item);
+        bonusContainer.appendChild(box);
     });
 }
 
@@ -518,11 +484,9 @@ function selectCategory(categoryKey) {
 function createStatCard(label, value, useBadge) {
     const stat = document.createElement("div");
     stat.className = "popup-stat";
-
     const statLabel = document.createElement("p");
     statLabel.className = "popup-stat-label";
     statLabel.textContent = label;
-
     stat.appendChild(statLabel);
     if (useBadge) {
         const badge = document.createElement("span");
@@ -538,23 +502,20 @@ function createStatCard(label, value, useBadge) {
     return stat;
 }
 
-function renderPopupHeader(contentWrap, cardName, cardKey) {
+function renderPopupHeader(contentWrap, cardName, cardId) {
     const head = document.createElement("div");
     head.className = "popup-head";
-
     const title = document.createElement("h2");
     title.className = "popup-title";
     title.textContent = cardName;
-
     const favoriteButton = document.createElement("button");
     favoriteButton.type = "button";
     favoriteButton.className = "popup-favorite-button";
     favoriteButton.setAttribute("aria-label", `Favorite ${cardName}`);
-    favoriteButton.setAttribute("aria-pressed", isFavoriteCard(cardKey) ? "true" : "false");
+    favoriteButton.setAttribute("aria-pressed", isFavoriteCard(cardId) ? "true" : "false");
     favoriteButton.dataset.action = "popup-favorite";
-    favoriteButton.dataset.cardKey = cardKey;
-    favoriteButton.textContent = isFavoriteCard(cardKey) ? "\u2605" : "\u2606";
-
+    favoriteButton.dataset.cardId = cardId;
+    favoriteButton.textContent = isFavoriteCard(cardId) ? "\u2605" : "\u2606";
     head.appendChild(title);
     head.appendChild(favoriteButton);
     contentWrap.appendChild(head);
@@ -568,27 +529,23 @@ function showBestCard(bonus, cardData, bankData) {
     const existingPopup = document.querySelector(".popup");
     if (existingPopup) existingPopup.remove();
 
-    const rankingCards = getEffectiveCardsForRanking(cardData);
-    const relevantCards = rankingCards
+    const relevantCards = getEffectiveCardsForRanking(cardData)
         .map((card) => {
-            const normalizedBonuses = card.bonuses || {};
-            const hasCategoryBonus = !isDefaultOnly && Object.prototype.hasOwnProperty.call(normalizedBonuses, normalizedBonus);
-            const appliedBonus = hasCategoryBonus ? normalizedBonuses[normalizedBonus] : normalizedBonuses.default;
+            const bonuses = card.bonuses || {};
+            const hasCategoryBonus = !isDefaultOnly && Object.prototype.hasOwnProperty.call(bonuses, normalizedBonus);
+            const appliedBonus = hasCategoryBonus ? bonuses[normalizedBonus] : bonuses.default;
             const numericBonus = Number(appliedBonus);
             if (!Number.isFinite(numericBonus)) return null;
-
             const bankDetails = getBankDetails(card.bank, bankData);
-            const weightedValue = numericBonus * bankDetails.multiplier;
-
             return {
-                card: card.card,
+                cardId: card.id,
+                cardName: card.card,
                 photoPath: card.photo || card.photoPath || "",
-                appliedBonus: numericBonus,
-                weightedValue,
-                source: hasCategoryBonus ? "category" : "default",
                 network: card.network,
                 tier: card.tier,
-                cardKey: card._walletCardKey,
+                appliedBonus: numericBonus,
+                weightedValue: numericBonus * bankDetails.multiplier,
+                source: hasCategoryBonus ? "category" : "default",
             };
         })
         .filter(Boolean)
@@ -596,7 +553,7 @@ function showBestCard(bonus, cardData, bankData) {
             if (b.weightedValue !== a.weightedValue) return b.weightedValue - a.weightedValue;
             if (b.appliedBonus !== a.appliedBonus) return b.appliedBonus - a.appliedBonus;
             if (a.source !== b.source) return a.source === "category" ? -1 : 1;
-            return a.card.localeCompare(b.card);
+            return a.cardName.localeCompare(b.cardName);
         });
 
     if (!relevantCards.length) {
@@ -606,7 +563,6 @@ function showBestCard(bonus, cardData, bankData) {
 
     setControlsMessage("", false);
     let currentIndex = 0;
-
     const popup = document.createElement("div");
     popup.className = "popup";
     popup.setAttribute("role", "dialog");
@@ -633,24 +589,21 @@ function showBestCard(bonus, cardData, bankData) {
         const image = document.createElement("img");
         image.className = "popup-card-image";
         image.src = card.photoPath || "./logo/cardBonusesIcons/default-icon.png";
-        image.alt = card.card;
-        image.onerror = () => {
-            image.src = "./logo/cardBonusesIcons/default-icon.png";
-        };
+        image.alt = card.cardName;
+        image.onerror = () => { image.src = "./logo/cardBonusesIcons/default-icon.png"; };
         popupContent.appendChild(image);
-        renderPopupHeader(popupContent, card.card, card.cardKey);
+        renderPopupHeader(popupContent, card.cardName, card.cardId);
 
-        const statsGrid = document.createElement("div");
-        statsGrid.className = "popup-stats-grid";
-        statsGrid.appendChild(createStatCard("Rank", `#${currentIndex + 1} of ${relevantCards.length}`, false));
-        statsGrid.appendChild(createStatCard("Network Tier", formatNetworkTier(card.network, card.tier), true));
-        statsGrid.appendChild(createStatCard("Bonus", `${card.appliedBonus.toFixed(1)}x ${categoryLabel}`, false));
-        statsGrid.appendChild(createStatCard("Value", `${card.weightedValue.toFixed(2)}x`, false));
-        popupContent.appendChild(statsGrid);
+        const stats = document.createElement("div");
+        stats.className = "popup-stats-grid";
+        stats.appendChild(createStatCard("Rank", `#${currentIndex + 1} of ${relevantCards.length}`, false));
+        stats.appendChild(createStatCard("Network Tier", formatNetworkTier(card.network, card.tier), true));
+        stats.appendChild(createStatCard("Bonus", `${card.appliedBonus.toFixed(1)}x ${categoryLabel}`, false));
+        stats.appendChild(createStatCard("Value", `${card.weightedValue.toFixed(2)}x`, false));
+        popupContent.appendChild(stats);
 
-        const buttonsWrap = document.createElement("div");
-        buttonsWrap.className = "popup-buttons";
-
+        const buttons = document.createElement("div");
+        buttons.className = "popup-buttons";
         const prevButton = document.createElement("button");
         prevButton.type = "button";
         prevButton.textContent = "Previous Card";
@@ -658,7 +611,6 @@ function showBestCard(bonus, cardData, bankData) {
             currentIndex = (currentIndex - 1 + relevantCards.length) % relevantCards.length;
             updatePopupContent();
         };
-
         const nextButton = document.createElement("button");
         nextButton.type = "button";
         nextButton.textContent = "Next Best Card";
@@ -666,16 +618,14 @@ function showBestCard(bonus, cardData, bankData) {
             currentIndex = (currentIndex + 1) % relevantCards.length;
             updatePopupContent();
         };
-
         const closeButton = document.createElement("button");
         closeButton.type = "button";
         closeButton.textContent = "Close";
         closeButton.onclick = closePopup;
-
-        buttonsWrap.appendChild(prevButton);
-        buttonsWrap.appendChild(nextButton);
-        buttonsWrap.appendChild(closeButton);
-        popupContent.appendChild(buttonsWrap);
+        buttons.appendChild(prevButton);
+        buttons.appendChild(nextButton);
+        buttons.appendChild(closeButton);
+        popupContent.appendChild(buttons);
     };
 
     popup.addEventListener("click", (event) => {
@@ -683,28 +633,27 @@ function showBestCard(bonus, cardData, bankData) {
     });
 
     popupContent.addEventListener("click", (event) => {
-        const actionButton = event.target.closest("button[data-action]");
-        if (actionButton && actionButton.dataset.action === "popup-favorite") {
-            const cardKey = String(actionButton.dataset.cardKey || "");
-            if (cardKey) {
-                setFavoriteCard(cardKey, !isFavoriteCard(cardKey));
-                renderFavoriteCategories();
-                renderWalletCardsGrid();
-                if (
-                    walletState.prefs.activeFilter === FILTER_FAVORITES
-                    || walletState.prefs.activeFilter === FILTER_FAVORITES_WALLET
-                ) {
-                    closePopup();
-                    if (walletState.selectedCategoryKey) {
-                        showBestCard(walletState.selectedCategoryKey, walletState.cardData, walletState.bankData);
-                    }
-                    return;
-                }
-                updatePopupContent();
-            }
+        const button = event.target.closest("button[data-action]");
+        if (!button) {
+            event.stopPropagation();
             return;
         }
-        event.stopPropagation();
+        if (button.dataset.action === "popup-favorite") {
+            const cardId = String(button.dataset.cardId || "");
+            if (!cardId) return;
+            setFavoriteCard(cardId, !isFavoriteCard(cardId));
+            if (
+                walletState.prefs.activeFilter === FILTER_FAVORITES
+                || walletState.prefs.activeFilter === FILTER_FAVORITES_WALLET
+            ) {
+                closePopup();
+                if (walletState.selectedCategoryKey) {
+                    showBestCard(walletState.selectedCategoryKey, walletState.cardData, walletState.bankData);
+                }
+                return;
+            }
+            updatePopupContent();
+        }
     });
 
     updatePopupContent();
@@ -717,20 +666,16 @@ async function loadWalletData() {
         dsLoadDataset(cardsStorageKey, "./database/cards.json"),
         dsLoadDataset(banksStorageKey, "./database/banks.json"),
     ]);
-
-    walletState.cardData = applyCardStorageKeys(dsNormalizeCardsForRuntime(rawCards));
+    walletState.cardData = applyCardRuntimeFields(dsNormalizeCardsForRuntime(rawCards));
     walletState.bankData = dsNormalizeBanksForRuntime(rawBanks);
 }
 
 function refreshWalletUi() {
-    const cardCategories = getAllCategoriesFromCards(walletState.cardData);
-    walletState.categories = [...cardCategories, DEFAULT_ONLY_CATEGORY_KEY];
-
+    const allCategories = getAllCategoriesFromCards(walletState.cardData);
+    walletState.categories = [...allCategories, DEFAULT_ONLY_CATEGORY_KEY];
     renderProfileUi();
     renderFavoriteCategories();
-    renderWalletCardsGrid();
-    renderBonuses(sortBonuses(cardCategories));
-
+    renderBonuses(sortBonuses(allCategories));
     if (walletState.selectedCategoryKey && !walletState.categories.includes(walletState.selectedCategoryKey)) {
         walletState.selectedCategoryKey = null;
     }
@@ -759,18 +704,16 @@ async function refreshDataFromNetwork() {
             fetchFirstAvailableJson(["./database/cards.json", "./database/cardsData.json"]),
             fetchFirstAvailableJson(["./database/banks.json", "./database/bankData.json"]),
         ]);
-
         const cardsValidation = dsValidateAndNormalizeCards(remoteCards);
         const banksValidation = dsValidateAndNormalizeBanks(remoteBanks);
         if (!cardsValidation.ok) throw new Error(cardsValidation.errors.join(" "));
         if (!banksValidation.ok) throw new Error(banksValidation.errors.join(" "));
-
         dsWriteLocalJson(cardsStorageKey, cardsValidation.data);
         dsWriteLocalJson(banksStorageKey, banksValidation.data);
         localStorage.setItem(LAST_SYNC_STORAGE_KEY, new Date().toISOString());
         renderLastSync();
-
         await loadWalletData();
+        migratePrefsCardRefs();
         refreshWalletUi();
         setControlsMessage("Data refreshed.", false);
     } catch (error) {
@@ -778,6 +721,7 @@ async function refreshDataFromNetwork() {
         const localBanks = dsReadLocalJson(banksStorageKey);
         if (localCards && localBanks) {
             await loadWalletData();
+            migratePrefsCardRefs();
             refreshWalletUi();
         }
         setControlsMessage("Offline: using saved data.", true);
@@ -785,15 +729,14 @@ async function refreshDataFromNetwork() {
 }
 
 function resetLocalWalletData() {
-    const keysToClear = [
+    [
         cardsStorageKey,
         banksStorageKey,
         LAST_SYNC_STORAGE_KEY,
         WALLET_PREFS_STORAGE_KEY,
         "wallet.favoriteCategories",
         "wallet.onlyInWalletCards",
-    ];
-    keysToClear.forEach((key) => localStorage.removeItem(key));
+    ].forEach((key) => localStorage.removeItem(key));
     location.reload();
 }
 
@@ -809,78 +752,77 @@ function attachWalletControlEvents() {
             }
         });
     }
-
     if (filterSelect && filterSelect.dataset.bound !== "true") {
         filterSelect.dataset.bound = "true";
         filterSelect.addEventListener("change", () => {
             walletState.prefs.activeFilter = filterSelect.value;
             saveWalletPrefs();
-            refreshWalletUi();
             if (walletState.selectedCategoryKey) {
                 showBestCard(walletState.selectedCategoryKey, walletState.cardData, walletState.bankData);
             }
         });
     }
-
+    if (noFtfToggle && noFtfToggle.dataset.bound !== "true") {
+        noFtfToggle.dataset.bound = "true";
+        noFtfToggle.addEventListener("change", () => {
+            walletState.prefs.requireNoFtf = Boolean(noFtfToggle.checked);
+            saveWalletPrefs();
+            if (walletState.selectedCategoryKey) {
+                showBestCard(walletState.selectedCategoryKey, walletState.cardData, walletState.bankData);
+            }
+        });
+    }
     if (favoriteCategoriesGrid && favoriteCategoriesGrid.dataset.bound !== "true") {
         favoriteCategoriesGrid.dataset.bound = "true";
         favoriteCategoriesGrid.addEventListener("click", (event) => {
             const button = event.target.closest("button[data-category]");
             if (!button) return;
             const categoryKey = String(button.dataset.category || "");
-            if (!categoryKey) return;
-            selectCategory(categoryKey);
+            if (categoryKey) selectCategory(categoryKey);
         });
     }
-
-    if (walletCardsGrid && walletCardsGrid.dataset.bound !== "true") {
-        walletCardsGrid.dataset.bound = "true";
-        walletCardsGrid.addEventListener("click", (event) => {
-            const actionButton = event.target.closest("button[data-action]");
-            if (!actionButton) return;
-            const cardKey = String(actionButton.dataset.cardKey || "");
-            if (!cardKey) return;
-
-            if (actionButton.dataset.action === "toggle-favorite") {
-                setFavoriteCard(cardKey, !isFavoriteCard(cardKey));
-                renderFavoriteCategories();
-                renderWalletCardsGrid();
+    if (bonusContainer && bonusContainer.dataset.bound !== "true") {
+        bonusContainer.dataset.bound = "true";
+        bonusContainer.addEventListener("click", (event) => {
+            const pin = event.target.closest("button[data-action='toggle-pin']");
+            if (pin) {
+                event.preventDefault();
+                event.stopPropagation();
+                const categoryKey = String(pin.dataset.category || "");
+                if (categoryKey) {
+                    togglePinnedCategory(categoryKey);
+                    refreshWalletUi();
+                }
                 return;
             }
-
-            if (actionButton.dataset.action === "toggle-wallet") {
-                toggleCardInActiveWallet(cardKey);
-                renderWalletCardsGrid();
-                if (walletState.selectedCategoryKey) {
-                    showBestCard(walletState.selectedCategoryKey, walletState.cardData, walletState.bankData);
-                }
-            }
+            const box = event.target.closest(".bonus-box");
+            if (!box) return;
+            const categoryKey = String(box.dataset.bonus || "");
+            if (categoryKey) selectCategory(categoryKey);
         });
     }
-
     if (refreshDataButton && refreshDataButton.dataset.bound !== "true") {
         refreshDataButton.dataset.bound = "true";
         refreshDataButton.addEventListener("click", refreshDataFromNetwork);
     }
-
     if (resetDataButton && resetDataButton.dataset.bound !== "true") {
         resetDataButton.dataset.bound = "true";
         resetDataButton.addEventListener("click", resetLocalWalletData);
     }
 }
 
-async function fetchAndRenderBonuses() {
+async function initWallet() {
     try {
         walletState.prefs = loadWalletPrefs();
         renderLastSync();
         await loadWalletData();
-        seedWalletFromLegacyInWalletIfNeeded();
+        migratePrefsCardRefs();
         refreshWalletUi();
         attachWalletControlEvents();
     } catch (error) {
-        console.error("Error fetching or rendering bonuses:", error);
+        console.error("Error loading wallet:", error);
         setControlsMessage("Offline: using saved data.", true);
     }
 }
 
-fetchAndRenderBonuses();
+initWallet();

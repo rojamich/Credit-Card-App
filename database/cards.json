@@ -11,7 +11,9 @@
       "drugstore": 3
     },
     "network": "visa",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "freedom_unlimited",
+    "foreignTransactionFee": true
   },
   {
     "card": "Freedom",
@@ -25,7 +27,9 @@
       "restaurants": 5
     },
     "network": "visa",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "freedom",
+    "foreignTransactionFee": true
   },
   {
     "card": "Blue Cash Everyday",
@@ -40,7 +44,9 @@
       "online_shopping": 3
     },
     "network": "visa",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "blue_cash_everyday",
+    "foreignTransactionFee": true
   },
   {
     "card": "AMEX Platinum",
@@ -54,7 +60,9 @@
       "default": 1
     },
     "network": "amex",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "amex_platinum",
+    "foreignTransactionFee": true
   },
   {
     "card": "Ducks Unlimited",
@@ -68,7 +76,9 @@
       "fuel": 5
     },
     "network": "visa",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "ducks_unlimited",
+    "foreignTransactionFee": true
   },
   {
     "card": "Ink Business Preferred",
@@ -87,7 +97,9 @@
       "foreign_transactions": 1
     },
     "network": "visa",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "ink_business_preferred",
+    "foreignTransactionFee": true
   },
   {
     "card": "Venture X",
@@ -100,7 +112,9 @@
       "foreign_transactions": 2
     },
     "network": "visa",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "venture_x",
+    "foreignTransactionFee": true
   },
   {
     "card": "Hyatt",
@@ -119,7 +133,9 @@
       "foreign_transactions": 1
     },
     "network": "visa",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "hyatt",
+    "foreignTransactionFee": true
   },
   {
     "card": "Amazon Prime",
@@ -136,7 +152,9 @@
       "rideshare": 2
     },
     "network": "visa",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "amazon_prime",
+    "foreignTransactionFee": true
   },
   {
     "card": "Blue Business Plus",
@@ -149,7 +167,9 @@
       "foreign_transactions": 2
     },
     "network": "visa",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "blue_business_plus",
+    "foreignTransactionFee": true
   },
   {
     "card": "Golden1 Cash Rewards+",
@@ -164,7 +184,9 @@
       "groceries": 3
     },
     "network": "visa",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "golden1_cash_rewards",
+    "foreignTransactionFee": true
   },
   {
     "card": "Hilton Honors Aspire Card",
@@ -180,7 +202,9 @@
       "foreign_transactions": 3
     },
     "network": "visa",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "hilton_honors_aspire_card",
+    "foreignTransactionFee": true
   },
   {
     "card": "WELLS FARGO AUTOGRAPH VISA CARD",
@@ -198,7 +222,9 @@
       "foreign_transactions": 1
     },
     "network": "visa",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "wells_fargo_autograph_visa_card",
+    "foreignTransactionFee": true
   },
   {
     "card": "Atmos Rewards Summit Visa Infinite",
@@ -213,7 +239,9 @@
       "foreign_transactions": 3
     },
     "network": "visa",
-    "tier": "infinite"
+    "tier": "infinite",
+    "id": "atmos_rewards_summit_visa_infinite",
+    "foreignTransactionFee": true
   },
   {
     "card": "Business Gold Card",
@@ -231,7 +259,9 @@
       "foreign_transactions": 1
     },
     "network": "visa",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "business_gold_card",
+    "foreignTransactionFee": true
   },
   {
     "card": "Citi Strata Elite Card",
@@ -247,6 +277,8 @@
       "foreign_transactions": 1.5
     },
     "network": "visa",
-    "tier": "standard"
+    "tier": "standard",
+    "id": "citi_strata_elite_card",
+    "foreignTransactionFee": true
   }
 ]

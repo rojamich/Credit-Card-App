@@ -81,6 +81,22 @@ function normalizeCardTier(raw) {
     return normalized;
 }
 
+function normalizeCardId(raw) {
+    return normalizeBonusKey(raw);
+}
+
+function coerceBoolean(value, defaultValue) {
+    if (typeof value === "boolean") return value;
+    if (value === null || typeof value === "undefined" || value === "") return defaultValue;
+    if (typeof value === "number") return value !== 0;
+    if (typeof value === "string") {
+        const normalized = value.trim().toLowerCase();
+        if (["false", "0", "no", "off", "n"].includes(normalized)) return false;
+        if (["true", "1", "yes", "on", "y"].includes(normalized)) return true;
+    }
+    return Boolean(value);
+}
+
 function coerceInWallet(value) {
     if (typeof value === "boolean") return value;
     if (value === null || typeof value === "undefined" || value === "") return true;
@@ -193,6 +209,7 @@ function validateAndNormalizeCards(payload) {
     const data = payload.map((card, index) => {
         const cardNum = index + 1;
         const normalized = {
+            id: "",
             card: "",
             bank: "",
             photo: "",
@@ -200,6 +217,7 @@ function validateAndNormalizeCards(payload) {
             inWallet: true,
             network: "visa",
             tier: "standard",
+            foreignTransactionFee: true,
             bonuses: { default: 1 },
         };
 
@@ -210,6 +228,7 @@ function validateAndNormalizeCards(payload) {
 
         normalized.card = String(card.card ?? card.name ?? "").trim();
         normalized.bank = String(card.bank ?? "").trim();
+        normalized.id = normalizeCardId(card.id ?? card.cardId ?? card.key ?? normalized.card);
         normalized.photo = String(card.photo ?? card.image ?? card.photoPath ?? "").trim();
         normalized.photoPath = normalized.photo;
         normalized.inWallet = coerceInWallet(card.inWallet);
@@ -217,6 +236,7 @@ function validateAndNormalizeCards(payload) {
         const hasTierField = Object.prototype.hasOwnProperty.call(card, "tier");
         normalized.network = normalizeCardNetwork(card.network);
         normalized.tier = normalizeCardTier(card.tier);
+        normalized.foreignTransactionFee = coerceBoolean(card.foreignTransactionFee, true);
 
         if (Object.prototype.hasOwnProperty.call(card, "annualFee") && card.annualFee !== "" && card.annualFee !== null) {
             const annualFeeValue = toFiniteNumber(card.annualFee);
@@ -237,6 +257,7 @@ function validateAndNormalizeCards(payload) {
 
         if (!normalized.card) errors.push(`Card ${cardNum}: card name is required.`);
         if (!normalized.bank) errors.push(`Card ${cardNum}: bank is required.`);
+        if (!normalized.id) errors.push(`Card ${cardNum}: id is required.`);
         if (hasNetworkField && !normalized.network) {
             errors.push(`Card ${cardNum}: network must be one of ${ALLOWED_CARD_NETWORKS.join(", ")}.`);
         }
@@ -282,6 +303,19 @@ function validateAndNormalizeCards(payload) {
         return normalized;
     });
 
+    const seenIds = new Set();
+    data.forEach((card, index) => {
+        if (!card.id) card.id = `card_${index + 1}`;
+        let nextId = card.id;
+        let suffix = 2;
+        while (seenIds.has(nextId)) {
+            nextId = `${card.id}_${suffix}`;
+            suffix += 1;
+        }
+        card.id = nextId;
+        seenIds.add(nextId);
+    });
+
     return { ok: errors.length === 0, data, errors };
 }
 
@@ -294,6 +328,7 @@ function normalizeCardsForRuntime(payload) {
             const cardName = String(card.card ?? card.name ?? "").trim();
             const bank = String(card.bank ?? "").trim();
             const photo = String(card.photo ?? card.image ?? card.photoPath ?? "").trim();
+            const id = normalizeCardId(card.id ?? card.cardId ?? card.key ?? cardName);
             const rawBonuses = card.bonuses && typeof card.bonuses === "object" && !Array.isArray(card.bonuses)
                 ? card.bonuses
                 : {};
@@ -315,6 +350,7 @@ function normalizeCardsForRuntime(payload) {
             }
 
             const normalized = {
+                id: id || "",
                 card: cardName,
                 bank,
                 photo,
@@ -322,6 +358,7 @@ function normalizeCardsForRuntime(payload) {
                 inWallet: coerceInWallet(card.inWallet),
                 network: normalizeCardNetwork(card.network) || "visa",
                 tier: normalizeCardTier(card.tier) || "standard",
+                foreignTransactionFee: coerceBoolean(card.foreignTransactionFee, true),
                 bonuses,
             };
 
@@ -340,7 +377,22 @@ function normalizeCardsForRuntime(payload) {
 
             return normalized;
         })
-        .filter((card) => card.card);
+        .filter((card) => card.card)
+        .map((card, index, all) => {
+            if (card.id) return card;
+            return { ...card, id: normalizeCardId(card.card) || `card_${index + 1}` };
+        })
+        .map((card, index, all) => {
+            const existing = new Set(all.slice(0, index).map((item) => item.id));
+            if (!existing.has(card.id)) return card;
+            let suffix = 2;
+            let nextId = `${card.id}_${suffix}`;
+            while (existing.has(nextId)) {
+                suffix += 1;
+                nextId = `${card.id}_${suffix}`;
+            }
+            return { ...card, id: nextId };
+        });
 }
 
 async function loadDataset(storageKey, fallbackPath) {
@@ -368,6 +420,7 @@ window.CCDataStore = {
     normalizeCardsForRuntime,
     normalizeCardNetwork,
     normalizeCardTier,
+    normalizeCardId,
     ALLOWED_CARD_NETWORKS,
     ALLOWED_CARD_TIERS,
 };

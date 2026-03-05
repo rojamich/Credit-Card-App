@@ -49,6 +49,33 @@
             <button id="save-cards-button" type="button">Save All Cards</button>
         </div>
 
+        <section class="wallet-manager" aria-labelledby="wallet-manager-title">
+            <div class="wallet-manager-head">
+                <h3 id="wallet-manager-title">My Wallet</h3>
+                <p>Manage wallet membership and favorites by profile.</p>
+            </div>
+            <div class="wallet-manager-controls">
+                <label for="wallet-manager-profile-select">
+                    <span>Profile</span>
+                    <select id="wallet-manager-profile-select">
+                        <option value="michael">Michael</option>
+                        <option value="jenna">Jenna</option>
+                        <option value="both">Both</option>
+                    </select>
+                </label>
+                <label for="wallet-manager-search-input">
+                    <span>Search Cards</span>
+                    <input id="wallet-manager-search-input" type="text" placeholder="Search by card name">
+                </label>
+            </div>
+            <div class="wallet-manager-actions">
+                <button id="wallet-empty-button" type="button" class="secondary-button">Empty Wallet</button>
+                <button id="wallet-quick-setup-button" type="button">Quick Setup</button>
+            </div>
+            <p id="wallet-manager-note" class="wallet-manager-note"></p>
+            <div id="wallet-manager-list" class="wallet-manager-list"></div>
+        </section>
+
         <details class="advanced-panel">
             <summary>Advanced</summary>
             <div class="actions advanced-actions">
@@ -76,6 +103,9 @@
             <form id="card-editor-form" class="card-form">
                 <label for="card-name-input">Name</label>
                 <input id="card-name-input" type="text" required>
+
+                <label for="card-id-input">Card ID</label>
+                <input id="card-id-input" type="text" placeholder="auto-generated from name">
 
                 <label for="card-bank-select">Bank</label>
                 <select id="card-bank-select"></select>
@@ -109,6 +139,12 @@
 
                 <label for="card-annual-fee-input">Annual Fee (optional)</label>
                 <input id="card-annual-fee-input" type="number" step="1" placeholder="0">
+
+                <label for="card-foreign-fee-select">Foreign transaction fee</label>
+                <select id="card-foreign-fee-select">
+                    <option value="false">No fee</option>
+                    <option value="true">Has fee</option>
+                </select>
 
                 <div class="inline-row">
                     <label><input id="card-in-wallet-input" type="checkbox" checked> In my wallet</label>
@@ -144,6 +180,34 @@
                     <button id="save-card-editor-button" type="submit">Save Card</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div id="wallet-quick-setup-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="wallet-quick-setup-title">
+        <div class="modal-panel">
+            <div class="modal-head">
+                <h3 id="wallet-quick-setup-title">Quick Setup</h3>
+                <button id="close-wallet-quick-setup-button" type="button" class="icon-button" aria-label="Close">X</button>
+            </div>
+            <div class="quick-setup-block">
+                <p class="quick-setup-step">1) Select categories</p>
+                <div id="wallet-quick-setup-categories" class="quick-setup-categories"></div>
+            </div>
+            <div class="quick-setup-block">
+                <label for="wallet-quick-setup-size-input">2) Number of cards to carry</label>
+                <input id="wallet-quick-setup-size-input" type="number" min="1" step="1" value="4">
+            </div>
+            <div class="quick-setup-block">
+                <p class="quick-setup-step">3) Constraints</p>
+                <label class="quick-setup-check">
+                    <input id="wallet-quick-setup-no-ftf-input" type="checkbox">
+                    <span>Must have no foreign transaction fee</span>
+                </label>
+            </div>
+            <div class="quick-setup-actions">
+                <button id="wallet-quick-setup-build-button" type="button">Build Wallet</button>
+            </div>
+            <div id="wallet-quick-setup-summary" class="quick-setup-summary"></div>
         </div>
     </div>
 
