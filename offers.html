@@ -92,6 +92,19 @@
         </section>
 
         <section id="offers-list" class="offers-list"></section>
+
+        <details class="offers-advanced" id="offers-advanced-section">
+            <summary>Advanced</summary>
+            <div class="maintenance-actions">
+                <button id="offers-add-button" type="button">Add Offer</button>
+                <button id="offers-save-button" type="button">Save All Offers</button>
+                <button id="offers-export-backup-button" type="button">Export backup</button>
+                <button id="offers-export-publish-button" type="button">Export for publish</button>
+                <button id="offers-reload-published-button" type="button" class="secondary-button">Reload published offers</button>
+            </div>
+            <p id="offers-admin-message" class="offers-note"></p>
+            <div id="offers-admin-list" class="offers-admin-list"></div>
+        </details>
     </main>
 
     <div id="offer-popup" class="offer-popup hidden" role="dialog" aria-modal="true">
@@ -117,6 +130,108 @@
     </div>
 
     <div id="offers-toast" class="offers-toast hidden" role="status" aria-live="polite"></div>
+
+    <div id="offer-editor-modal" class="offer-popup hidden" role="dialog" aria-modal="true">
+        <div class="offer-popup-panel">
+            <div class="offer-popup-head">
+                <h3 id="offer-editor-title">Add Offer</h3>
+                <button id="offer-editor-close" type="button">Close</button>
+            </div>
+            <div id="offer-editor-errors" class="offers-note"></div>
+            <form id="offer-editor-form" class="offer-editor-form">
+                <label>ID
+                    <input id="offer-id-input" type="text" required>
+                </label>
+                <label>Merchant Key
+                    <input id="offer-merchant-key-input" type="text" required>
+                </label>
+                <label>Merchant Name
+                    <input id="offer-merchant-name-input" type="text" required>
+                </label>
+                <label>Logo URL
+                    <input id="offer-logo-input" type="url" placeholder="https://...">
+                </label>
+                <label>Provider
+                    <select id="offer-provider-input">
+                        <option value="chase">Chase</option>
+                        <option value="amex">Amex</option>
+                        <option value="other">Other</option>
+                    </select>
+                </label>
+                <div class="offer-editor-grid">
+                    <label>Start Date
+                        <input id="offer-start-date-input" type="date">
+                    </label>
+                    <label>Expires
+                        <input id="offer-expires-input" type="date" required>
+                    </label>
+                </div>
+
+                <fieldset class="offer-editor-fieldset">
+                    <legend>Categories</legend>
+                    <div id="offer-categories-input" class="offer-category-options"></div>
+                </fieldset>
+
+                <label>Offer Type
+                    <select id="offer-type-input">
+                        <option value="percent">Percent</option>
+                        <option value="fixed">Fixed</option>
+                        <option value="points">Points</option>
+                    </select>
+                </label>
+
+                <div id="offer-fields-percent" class="offer-type-fields">
+                    <label>Rate (e.g. 0.1 for 10%)
+                        <input id="offer-rate-input" type="number" step="0.01" min="0">
+                    </label>
+                    <label>Max Discount (optional)
+                        <input id="offer-max-discount-input" type="number" step="0.01" min="0">
+                    </label>
+                    <label>Min Spend
+                        <input id="offer-min-spend-percent-input" type="number" step="0.01" min="0" value="0">
+                    </label>
+                </div>
+
+                <div id="offer-fields-fixed" class="offer-type-fields hidden">
+                    <label>Fixed Amount
+                        <input id="offer-fixed-amount-input" type="number" step="0.01" min="0">
+                    </label>
+                    <label>Min Spend
+                        <input id="offer-min-spend-fixed-input" type="number" step="0.01" min="0" value="0">
+                    </label>
+                </div>
+
+                <div id="offer-fields-points" class="offer-type-fields hidden">
+                    <label>Points
+                        <input id="offer-points-input" type="number" step="1" min="0">
+                    </label>
+                    <label>Program Key
+                        <select id="offer-program-key-input"></select>
+                    </label>
+                    <label>Min Spend
+                        <input id="offer-min-spend-points-input" type="number" step="0.01" min="0" value="0">
+                    </label>
+                </div>
+
+                <label>Aliases (comma separated)
+                    <input id="offer-aliases-input" type="text">
+                </label>
+                <label>Notes
+                    <textarea id="offer-notes-input" rows="2"></textarea>
+                </label>
+
+                <fieldset class="offer-editor-fieldset">
+                    <legend>Attachments</legend>
+                    <div id="offer-attachments-input" class="offer-attachments-input"></div>
+                    <button id="offer-add-attachment-button" type="button" class="secondary-button">Add Attachment</button>
+                </fieldset>
+
+                <div class="maintenance-actions">
+                    <button type="submit">Save Offer</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="./js/dataStore.js?v=2026-03-05"></script>
     <script src="./js/offersScript.js?v=2026-03-05"></script>
