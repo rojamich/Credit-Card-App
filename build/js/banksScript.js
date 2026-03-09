@@ -3,6 +3,7 @@ const messageEl = document.getElementById("banks-message");
 const addBankButton = document.getElementById("add-bank-button");
 const saveBanksButton = document.getElementById("save-banks-button");
 const exportBanksButton = document.getElementById("export-banks-button");
+const exportBanksPublishButton = document.getElementById("export-banks-publish-button");
 const importBanksButton = document.getElementById("import-banks-button");
 const syncBanksButton = document.getElementById("sync-banks-button");
 const importBanksFile = document.getElementById("import-banks-file");
@@ -153,7 +154,7 @@ function validateCurrentBanks() {
 function saveBanks() {
     const validation = validateCurrentBanks();
     if (!validation.ok) {
-        setMessage(`Save blocked:\n${validation.errors.map((e) => `- ${e}`).join("\n")}`, true);
+        setMessage(buildSaveBlockedMessage(validation.errors), true);
         return;
     }
 
@@ -175,14 +176,33 @@ function downloadJson(filename, data) {
     URL.revokeObjectURL(url);
 }
 
+function buildSaveBlockedMessage(errors) {
+    return `Save blocked:\n${errors.map((e) => `- ${e}`).join("\n")}`;
+}
+
+function getBackupBanksFilename() {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    return `bankData-export-${stamp}.json`;
+}
+
 function exportBanks() {
     const validation = validateCurrentBanks();
     if (!validation.ok) {
-        setMessage(`Export blocked:\n${validation.errors.map((e) => `- ${e}`).join("\n")}`, true);
+        setMessage(buildSaveBlockedMessage(validation.errors), true);
         return;
     }
-    downloadJson("bankData-export.json", validation.data);
-    setMessage("Banks exported.", false);
+    downloadJson(getBackupBanksFilename(), validation.data);
+    setMessage("Banks backup exported.", false);
+}
+
+function exportBanksForPublish() {
+    const validation = validateCurrentBanks();
+    if (!validation.ok) {
+        setMessage(buildSaveBlockedMessage(validation.errors), true);
+        return;
+    }
+    downloadJson("banks.json", validation.data);
+    setMessage("Saved banks.json. Replace /database/banks.json in your repo with this file and commit.", false);
 }
 
 function importBanksFromFile(event) {
@@ -218,9 +238,14 @@ async function syncBanksFromSource() {
     }
 
     try {
-        const response = await fetch(`./database/bankData.json?ts=${Date.now()}`, { cache: "no-store" });
-        if (!response.ok) throw new Error("Could not fetch online bank data.");
-        const parsed = await response.json();
+        let parsed = null;
+        for (const path of ["./database/banks.json", "./database/bankData.json"]) {
+            const response = await fetch(`${path}?ts=${Date.now()}`, { cache: "no-store" });
+            if (!response.ok) continue;
+            parsed = await response.json();
+            break;
+        }
+        if (!parsed) throw new Error("Could not fetch online bank data.");
         const validation = dsValidateAndNormalizeBanks(parsed);
         if (!validation.ok) {
             setMessage(`Sync blocked:\n${validation.errors.map((e) => `- ${e}`).join("\n")}`, true);
@@ -237,7 +262,7 @@ async function syncBanksFromSource() {
 
 async function loadBanks() {
     try {
-        const raw = await dsLoadDataset(banksStorageKey, "./database/bankData.json");
+        const raw = await dsLoadDataset(banksStorageKey, "./database/banks.json");
         banks = dsNormalizeBanksForRuntime(raw);
         renderBanks();
         setMessage("Bank data loaded.", false);
@@ -273,6 +298,9 @@ bankModal.addEventListener("click", (event) => {
 addBankButton.addEventListener("click", () => openBankEditor(null));
 saveBanksButton.addEventListener("click", saveBanks);
 exportBanksButton.addEventListener("click", exportBanks);
+if (exportBanksPublishButton) {
+    exportBanksPublishButton.addEventListener("click", exportBanksForPublish);
+}
 importBanksButton.addEventListener("click", () => importBanksFile.click());
 importBanksFile.addEventListener("change", importBanksFromFile);
 syncBanksButton.addEventListener("click", syncBanksFromSource);

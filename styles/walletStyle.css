@@ -304,6 +304,25 @@ body {
     color: #d69d00;
 }
 
+.popup-purchase-wrap {
+    margin-top: 12px;
+    display: grid;
+    gap: 4px;
+    color: #193463;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.popup-purchase-wrap input {
+    min-height: 40px;
+    border: 1px solid #c7d7f4;
+    border-radius: 10px;
+    background: #fff;
+    color: #14366b;
+    padding: 0 10px;
+    font-weight: 700;
+}
+
 .popup-stats-grid {
     margin-top: 12px;
     display: grid;

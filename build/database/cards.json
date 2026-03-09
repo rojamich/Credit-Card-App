@@ -1,0 +1,304 @@
+[
+  {
+    "id": "freedom_unlimited",
+    "card": "Freedom Unlimited",
+    "bank": "chase",
+    "photo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTbI-75P48iiYxqMsNsdyKTdDtPScOx--Up2Ssk3gx53YziCImM1kOclH6bIiRofEMjen0&usqp=CAU",
+    "photoPath": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTbI-75P48iiYxqMsNsdyKTdDtPScOx--Up2Ssk3gx53YziCImM1kOclH6bIiRofEMjen0&usqp=CAU",
+    "inWallet": true,
+    "network": "visa",
+    "tier": "signature",
+    "foreignTransactionFee": true,
+    "instances": [
+      {
+        "id": "fu_physical",
+        "label": "Freedom Unlimited - Physical",
+        "last4": "0034"
+      },
+      {
+        "id": "fu_wallet",
+        "label": "Freedom Unlimited - Mobile Wallet",
+        "last4": null
+      }
+    ],
+    "bonuses": {
+      "default": 1.5,
+      "restaurants": 3,
+      "drugstore": 3
+    }
+  },
+  {
+    "id": "freedom",
+    "card": "Freedom",
+    "bank": "chase",
+    "photo": "https://www.uscreditcardguide.com/wp-content/uploads/freedom_card-2.png",
+    "photoPath": "https://www.uscreditcardguide.com/wp-content/uploads/freedom_card-2.png",
+    "inWallet": true,
+    "network": "visa",
+    "tier": "signature",
+    "foreignTransactionFee": true,
+    "bonuses": {
+      "default": 1,
+      "lyft": 5,
+      "restaurants": 5
+    }
+  },
+  {
+    "id": "blue_cash_everyday",
+    "card": "Blue Cash Everyday",
+    "bank": "cash",
+    "photo": "https://www.aexp-static.com/online/myca/shared/summary/cardasset/images/NUS000000305_480x304_STRAIGHT_96.jpg",
+    "photoPath": "https://www.aexp-static.com/online/myca/shared/summary/cardasset/images/NUS000000305_480x304_STRAIGHT_96.jpg",
+    "inWallet": true,
+    "network": "amex",
+    "tier": "standard",
+    "foreignTransactionFee": true,
+    "bonuses": {
+      "default": 1,
+      "groceries": 3,
+      "fuel": 3,
+      "online_shopping": 3
+    }
+  },
+  {
+    "id": "amex_platinum",
+    "card": "AMEX Platinum",
+    "bank": "amex",
+    "photo": "https://www.aexp-static.com/online/myca/shared/summary/cardasset/images/NUS000000298_480x304_STRAIGHT_96.jpg",
+    "photoPath": "https://www.aexp-static.com/online/myca/shared/summary/cardasset/images/NUS000000298_480x304_STRAIGHT_96.jpg",
+    "inWallet": true,
+    "network": "amex",
+    "tier": "standard",
+    "foreignTransactionFee": false,
+    "bonuses": {
+      "default": 1,
+      "airfare": 5,
+      "groceries": 1
+    },
+    "annualFee": 895
+  },
+  {
+    "id": "ducks_unlimited",
+    "card": "Ducks Unlimited",
+    "bank": "cash",
+    "photo": "https://www.ducks.org/files/live/sites/ducksorg/files/DU5SG_VISA_sm.jpeg",
+    "photoPath": "https://www.ducks.org/files/live/sites/ducksorg/files/DU5SG_VISA_sm.jpeg",
+    "inWallet": true,
+    "network": "visa",
+    "tier": "signature",
+    "foreignTransactionFee": true,
+    "bonuses": {
+      "default": 1,
+      "sporting_goods": 5,
+      "fuel": 5
+    }
+  },
+  {
+    "id": "ink_business_preferred",
+    "card": "Ink Business Preferred",
+    "bank": "chase",
+    "photo": "https://static2.chasecdn.com/content/services/rendition/image.large.png/unified-assets/digital-cards/chase-ink/41473467055.png",
+    "photoPath": "https://static2.chasecdn.com/content/services/rendition/image.large.png/unified-assets/digital-cards/chase-ink/41473467055.png",
+    "inWallet": true,
+    "network": "visa",
+    "tier": "signature",
+    "foreignTransactionFee": false,
+    "bonuses": {
+      "default": 1,
+      "airfare": 3,
+      "shipping": 3,
+      "lyft": 3,
+      "travel": 3,
+      "internet_cable_phone": 3,
+      "rideshare": 3,
+      "foreign_transactions": 1
+    },
+    "annualFee": 95
+  },
+  {
+    "id": "venture_x",
+    "card": "Venture X",
+    "bank": "capital1",
+    "photo": "https://ecm.capitalone.com/WCM/card/products/venturex-cg-static-card-1000x630-2.png",
+    "photoPath": "https://ecm.capitalone.com/WCM/card/products/venturex-cg-static-card-1000x630-2.png",
+    "inWallet": true,
+    "network": "visa",
+    "tier": "infinite",
+    "foreignTransactionFee": false,
+    "bonuses": {
+      "default": 2,
+      "foreign_transactions": 2
+    },
+    "annualFee": 395
+  },
+  {
+    "id": "hyatt",
+    "card": "Hyatt",
+    "bank": "hyatt",
+    "photo": "https://static2.chasecdn.com/content/services/rendition/image.large.png/unified-assets/digital-cards/hyatt/41473467012.png",
+    "photoPath": "https://static2.chasecdn.com/content/services/rendition/image.large.png/unified-assets/digital-cards/hyatt/41473467012.png",
+    "inWallet": true,
+    "network": "visa",
+    "tier": "signature",
+    "foreignTransactionFee": false,
+    "bonuses": {
+      "default": 1,
+      "hyatt": 4,
+      "airfare": 2,
+      "restaurants": 2,
+      "lyft": 2,
+      "rideshare": 2,
+      "gym": 2,
+      "foreign_transactions": 1
+    },
+    "annualFee": 95
+  },
+  {
+    "id": "amazon_prime",
+    "card": "Amazon Prime",
+    "bank": "cash",
+    "photo": "https://static2.chasecdn.com/content/services/rendition/image.large.png/unified-assets/digital-cards/amazon-prime/41473477008.png",
+    "photoPath": "https://static2.chasecdn.com/content/services/rendition/image.large.png/unified-assets/digital-cards/amazon-prime/41473477008.png",
+    "inWallet": true,
+    "network": "visa",
+    "tier": "signature",
+    "foreignTransactionFee": false,
+    "bonuses": {
+      "default": 1,
+      "amazon": 5,
+      "whole_foods": 5,
+      "restaurants": 2,
+      "fuel": 2,
+      "rideshare": 2
+    }
+  },
+  {
+    "id": "blue_business_plus",
+    "card": "Blue Business Plus",
+    "bank": "amex",
+    "photo": "https://www.aexp-static.com/online/myca/shared/summary/cardasset/images/NUS000000218_480x304_STRAIGHT_96.jpg",
+    "photoPath": "https://www.aexp-static.com/online/myca/shared/summary/cardasset/images/NUS000000218_480x304_STRAIGHT_96.jpg",
+    "inWallet": true,
+    "network": "amex",
+    "tier": "standard",
+    "foreignTransactionFee": false,
+    "bonuses": {
+      "default": 2,
+      "foreign_transactions": 2
+    }
+  },
+  {
+    "id": "golden1_cash_rewards",
+    "card": "Golden1 Cash Rewards+",
+    "bank": "cash",
+    "photo": "https://www.golden1.com/-/media/golden1/images/2025-credit-card-product-page-refresh/mcr600x378.png?rev=64df670d4b924408a6389b131ffd8bc7",
+    "photoPath": "https://www.golden1.com/-/media/golden1/images/2025-credit-card-product-page-refresh/mcr600x378.png?rev=64df670d4b924408a6389b131ffd8bc7",
+    "inWallet": true,
+    "network": "visa",
+    "tier": "signature",
+    "foreignTransactionFee": true,
+    "bonuses": {
+      "default": 1,
+      "evcharging": 4,
+      "restaurants": 3,
+      "groceries": 3
+    }
+  },
+  {
+    "id": "hilton_honors_aspire_card",
+    "card": "Hilton Honors Aspire Card",
+    "bank": "hilton",
+    "photo": "https://icm.aexp-static.com/acquisition/card-art/NUS000000329_480x304_straight_withname.png",
+    "photoPath": "https://icm.aexp-static.com/acquisition/card-art/NUS000000329_480x304_straight_withname.png",
+    "inWallet": true,
+    "network": "amex",
+    "tier": "standard",
+    "foreignTransactionFee": false,
+    "bonuses": {
+      "default": 3,
+      "airfare": 7,
+      "restaurants": 7,
+      "hilton_hotels": 14,
+      "foreign_transactions": 3
+    },
+    "annualFee": 550
+  },
+  {
+    "id": "wells_fargo_autograph_visa_card",
+    "card": "WELLS FARGO AUTOGRAPH VISA CARD",
+    "bank": "wellsfargo",
+    "photo": "https://www10.wellsfargomedia.com/services/static/assets/securesite/digitalchannel/ccimages/Autograph_Card.jpg",
+    "photoPath": "https://www10.wellsfargomedia.com/services/static/assets/securesite/digitalchannel/ccimages/Autograph_Card.jpg",
+    "inWallet": true,
+    "network": "visa",
+    "tier": "signature",
+    "foreignTransactionFee": false,
+    "bonuses": {
+      "default": 1,
+      "travel": 3,
+      "restaurants": 3,
+      "fuel": 3,
+      "evcharging": 3,
+      "internet_cable_phone": 3,
+      "foreign_transactions": 1
+    }
+  },
+  {
+    "id": "atmos_rewards_summit_visa_infinite",
+    "card": "Atmos Rewards Summit Visa Infinite",
+    "bank": "atmos",
+    "photo": "https://www.bankofamerica.com/content/images/ContextualSiteGraphics/CreditCardArt/en_US/Approved_PCM/1bed_rewcm_v_atmos_visafront_infinite_250.png",
+    "photoPath": "https://www.bankofamerica.com/content/images/ContextualSiteGraphics/CreditCardArt/en_US/Approved_PCM/1bed_rewcm_v_atmos_visafront_infinite_250.png",
+    "inWallet": true,
+    "network": "visa",
+    "tier": "infinite",
+    "foreignTransactionFee": false,
+    "bonuses": {
+      "default": 1,
+      "alaska": 3,
+      "restaurants": 3,
+      "foreign_transactions": 3
+    },
+    "annualFee": 395
+  },
+  {
+    "id": "business_gold_card",
+    "card": "Business Gold Card",
+    "bank": "amex",
+    "photo": "https://www.aexp-static.com/online/myca/shared/summary/cardasset/images/NUS000000324_480x304_STRAIGHT_96.jpg",
+    "photoPath": "https://www.aexp-static.com/online/myca/shared/summary/cardasset/images/NUS000000324_480x304_STRAIGHT_96.jpg",
+    "inWallet": true,
+    "network": "amex",
+    "tier": "standard",
+    "foreignTransactionFee": false,
+    "bonuses": {
+      "default": 1,
+      "electronic_store_software": 4,
+      "restaurants": 4,
+      "internet_cable_phone": 4,
+      "fuel": 4,
+      "public_transportation": 4,
+      "foreign_transactions": 1
+    },
+    "annualFee": 375
+  },
+  {
+    "id": "citi_strata_elite_card",
+    "card": "Citi Strata Elite Card",
+    "bank": "citi",
+    "photo": "https://online.citi.com/cards/svc/img/svgImage/920_Citi_StrataElite.svg",
+    "photoPath": "https://online.citi.com/cards/svc/img/svgImage/920_Citi_StrataElite.svg",
+    "inWallet": true,
+    "network": "mastercard",
+    "tier": "world-elite",
+    "foreignTransactionFee": false,
+    "bonuses": {
+      "default": 1.5,
+      "cititravel": 6,
+      "restaurants": 3,
+      "citinights_fri_sat_6am_6pm_est": 6,
+      "foreign_transactions": 1.5
+    },
+    "annualFee": 375
+  }
+]

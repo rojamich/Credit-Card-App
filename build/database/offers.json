@@ -1,0 +1,59 @@
+[
+  {
+    "id": "fred_meyer_10pct_up_to_5_2026_03_31",
+    "merchantKey": "fred_meyer",
+    "merchantName": "Fred Meyer",
+    "logo": "",
+    "provider": "chase",
+    "expires": "2026-03-31",
+    "startDate": "2026-03-01",
+    "categories": ["groceries", "fuel"],
+    "offerType": "percent",
+    "rate": 0.1,
+    "maxDiscount": 5,
+    "minSpend": 0,
+    "fixedAmount": null,
+    "points": null,
+    "programKey": "cash",
+    "attachments": [
+      {
+        "cardId": "freedom_unlimited",
+        "cardInstanceId": "",
+        "note": ""
+      },
+      {
+        "cardId": "venture_x",
+        "cardInstanceId": "",
+        "note": ""
+      }
+    ],
+    "aliases": ["Fred Meyers", "Kroger Fred Meyer"],
+    "notes": ""
+  },
+  {
+    "id": "delta_amex_mr_1000_after_50_2026_04_15",
+    "merchantKey": "delta",
+    "merchantName": "Delta",
+    "logo": "",
+    "provider": "amex",
+    "expires": "2026-04-15",
+    "startDate": "2026-03-01",
+    "categories": ["airfare", "travel"],
+    "offerType": "points",
+    "rate": null,
+    "maxDiscount": null,
+    "minSpend": 50,
+    "fixedAmount": null,
+    "points": 1000,
+    "programKey": "amex",
+    "attachments": [
+      {
+        "cardId": "amex_platinum",
+        "cardInstanceId": "",
+        "note": ""
+      }
+    ],
+    "aliases": ["Delta Air Lines"],
+    "notes": ""
+  }
+]

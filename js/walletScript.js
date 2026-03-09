@@ -73,6 +73,7 @@ function createDefaultPrefs() {
         },
         offerPublishQueue: [],
         lastOfferSpend: 50,
+        lastWalletPurchasePrice: 50,
     };
 }
 
@@ -146,6 +147,9 @@ function normalizePrefsStructure(rawPrefs) {
         },
         offerPublishQueue: Array.isArray(source.offerPublishQueue) ? source.offerPublishQueue : [],
         lastOfferSpend: Number.isFinite(Number(source.lastOfferSpend)) ? Number(source.lastOfferSpend) : defaults.lastOfferSpend,
+        lastWalletPurchasePrice: Number.isFinite(Number(source.lastWalletPurchasePrice))
+            ? Number(source.lastWalletPurchasePrice)
+            : defaults.lastWalletPurchasePrice,
     };
 
     return normalized;
@@ -202,6 +206,21 @@ function prettyLabelFromKey(key) {
         .filter(Boolean)
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
         .join(" ");
+}
+
+function normalizeWalletPurchasePrice(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric < 0) return 50;
+    return numeric;
+}
+
+function getWalletPurchasePrice() {
+    return normalizeWalletPurchasePrice(walletState.prefs && walletState.prefs.lastWalletPurchasePrice);
+}
+
+function setWalletPurchasePrice(value) {
+    walletState.prefs.lastWalletPurchasePrice = normalizeWalletPurchasePrice(value);
+    saveWalletPrefs();
 }
 
 function getLegacyCardKey(card, counts, seen) {
@@ -596,6 +615,10 @@ function renderPopupHeader(contentWrap, cardName, cardId) {
     contentWrap.appendChild(head);
 }
 
+function computeWalletRewardDollar(weightedValue, purchasePrice) {
+    return purchasePrice * (weightedValue / 100);
+}
+
 function showBestCard(bonus, cardData, bankData) {
     const isDefaultOnly = bonus === DEFAULT_ONLY_CATEGORY_KEY;
     const normalizedBonus = isDefaultOnly ? "default" : dsNormalizeBonusKey(bonus);
@@ -659,6 +682,8 @@ function showBestCard(bonus, cardData, bankData) {
     const updatePopupContent = () => {
         const card = relevantCards[currentIndex];
         const categoryLabel = isDefaultOnly ? "Other" : prettyLabelFromKey(normalizedBonus);
+        const purchasePrice = getWalletPurchasePrice();
+        const rewardDollar = computeWalletRewardDollar(card.weightedValue, purchasePrice);
         popupContent.innerHTML = "";
 
         const image = document.createElement("img");
@@ -669,12 +694,33 @@ function showBestCard(bonus, cardData, bankData) {
         popupContent.appendChild(image);
         renderPopupHeader(popupContent, card.cardName, card.cardId);
 
+        const purchaseWrap = document.createElement("label");
+        purchaseWrap.className = "popup-purchase-wrap";
+        const purchaseLabel = document.createElement("span");
+        purchaseLabel.textContent = "Purchase price";
+        const purchaseInput = document.createElement("input");
+        purchaseInput.type = "number";
+        purchaseInput.min = "0";
+        purchaseInput.step = "0.01";
+        purchaseInput.value = String(purchasePrice);
+        purchaseInput.setAttribute("inputmode", "decimal");
+        purchaseInput.setAttribute("aria-label", "Purchase price");
+        purchaseInput.addEventListener("change", () => {
+            setWalletPurchasePrice(purchaseInput.value);
+            updatePopupContent();
+        });
+        purchaseWrap.appendChild(purchaseLabel);
+        purchaseWrap.appendChild(purchaseInput);
+        popupContent.appendChild(purchaseWrap);
+
         const stats = document.createElement("div");
         stats.className = "popup-stats-grid";
         stats.appendChild(createStatCard("Rank", `#${currentIndex + 1} of ${relevantCards.length}`, false));
         stats.appendChild(createStatCard("Network Tier", formatNetworkTier(card.network, card.tier), true));
         stats.appendChild(createStatCard("Bonus", `${card.appliedBonus.toFixed(1)}x ${categoryLabel}`, false));
-        stats.appendChild(createStatCard("Value", `${card.weightedValue.toFixed(2)}x`, false));
+        stats.appendChild(createStatCard("Effective Reward", `${card.weightedValue.toFixed(2)}%`, false));
+        stats.appendChild(createStatCard("Purchase Price", `$${purchasePrice.toFixed(2)}`, false));
+        stats.appendChild(createStatCard("Reward Value", `$${rewardDollar.toFixed(2)}`, false));
         popupContent.appendChild(stats);
 
         const categoryOffers = getActiveOffersForCategory(normalizedBonus).slice(0, 2);

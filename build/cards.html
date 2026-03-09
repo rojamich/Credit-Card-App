@@ -2,13 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Cards</title>
     <link rel="stylesheet" href="./styles/mainStyle.css?v=2026-03-04">
     <link rel="stylesheet" href="./styles/adminStyle.css?v=2026-03-04">
     <link rel="icon" href="./favicon.ico" type="image/x-icon">
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#0b57d0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CardOpt">
+    <link rel="apple-touch-icon" href="./logo/wallet.png">
 </head>
 <body>
     <header class="topbar">
@@ -30,6 +34,10 @@
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v2H2V6zm0 4h20v8a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-8zm3 3h6v2H5v-2z"/></svg>
                     <span>Cards</span>
                 </a>
+                <a class="nav-tab" href="./offers.html">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v10H4V7zm2 2v6h12V9H6zm2 1h4v2H8v-2z"/></svg>
+                    <span>Offers</span>
+                </a>
             </nav>
         </div>
     </header>
@@ -45,14 +53,45 @@
             <button id="save-cards-button" type="button">Save All Cards</button>
         </div>
 
-        <details class="advanced-panel">
+        <section class="wallet-manager" aria-labelledby="wallet-manager-title">
+            <div class="wallet-manager-head">
+                <h3 id="wallet-manager-title">My Wallet</h3>
+                <p>Favorite cards pinned for quick access.</p>
+                <button id="wallet-manage-membership-button" type="button" class="secondary-button">Manage wallet membership</button>
+            </div>
+            <p id="wallet-manager-note" class="wallet-manager-note"></p>
+            <div id="wallet-manager-list" class="wallet-manager-list"></div>
+        </section>
+
+        <details class="advanced-panel" id="advanced-section">
             <summary>Advanced</summary>
             <div class="actions advanced-actions">
-                <button id="export-cards-button" type="button">Export JSON</button>
+                <button id="export-cards-button" type="button">Export backup</button>
+                <button id="export-cards-publish-button" type="button">Export for publish</button>
                 <button id="import-cards-button" type="button">Import JSON</button>
                 <button id="sync-cards-button" type="button">Sync From Database JSON</button>
                 <input id="import-cards-file" type="file" accept="application/json" class="hidden-file-input">
             </div>
+            <div class="wallet-manager-controls">
+                <label for="wallet-membership-profile-select">
+                    <span>Profile</span>
+                    <select id="wallet-membership-profile-select">
+                        <option value="michael">Michael</option>
+                        <option value="jenna">Jenna</option>
+                        <option value="both">Both</option>
+                    </select>
+                </label>
+                <label for="wallet-membership-search-input">
+                    <span>Search Cards</span>
+                    <input id="wallet-membership-search-input" type="text" placeholder="Search by card name">
+                </label>
+            </div>
+            <div class="wallet-manager-actions">
+                <button id="wallet-empty-button" type="button" class="secondary-button">Empty Wallet</button>
+                <button id="wallet-quick-setup-button" type="button">Quick Setup</button>
+            </div>
+            <p id="wallet-membership-note" class="wallet-manager-note"></p>
+            <div id="wallet-membership-list" class="wallet-manager-list"></div>
         </details>
 
         <div id="cards-message" class="message" aria-live="polite"></div>
@@ -72,6 +111,9 @@
                 <label for="card-name-input">Name</label>
                 <input id="card-name-input" type="text" required>
 
+                <label for="card-id-input">Card ID</label>
+                <input id="card-id-input" type="text" placeholder="auto-generated from name">
+
                 <label for="card-bank-select">Bank</label>
                 <select id="card-bank-select"></select>
 
@@ -80,8 +122,40 @@
                     <input id="card-bank-custom-input" type="text" placeholder="example_bank_key">
                 </div>
 
+                <div class="dual-select-row">
+                    <div>
+                        <label for="card-network-select">Network</label>
+                        <select id="card-network-select">
+                            <option value="visa">Visa</option>
+                            <option value="amex">Amex</option>
+                            <option value="mastercard">Mastercard</option>
+                            <option value="discover">Discover</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="card-tier-select">Tier</label>
+                        <select id="card-tier-select">
+                            <option value="standard">Standard</option>
+                            <option value="signature">Signature</option>
+                            <option value="infinite">Infinite</option>
+                            <option value="world">World</option>
+                            <option value="world-elite">World Elite</option>
+                        </select>
+                    </div>
+                </div>
+
                 <label for="card-annual-fee-input">Annual Fee (optional)</label>
                 <input id="card-annual-fee-input" type="number" step="1" placeholder="0">
+
+                <label for="card-foreign-fee-select">Foreign transaction fee</label>
+                <select id="card-foreign-fee-select">
+                    <option value="false">No fee</option>
+                    <option value="true">Has fee</option>
+                </select>
+
+                <div class="inline-row">
+                    <label><input id="card-in-wallet-input" type="checkbox" checked> In my wallet</label>
+                </div>
 
                 <div class="photo-editor">
                     <p class="photo-label">Photo</p>
@@ -113,6 +187,34 @@
                     <button id="save-card-editor-button" type="submit">Save Card</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div id="wallet-quick-setup-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="wallet-quick-setup-title">
+        <div class="modal-panel">
+            <div class="modal-head">
+                <h3 id="wallet-quick-setup-title">Quick Setup</h3>
+                <button id="close-wallet-quick-setup-button" type="button" class="icon-button" aria-label="Close">X</button>
+            </div>
+            <div class="quick-setup-block">
+                <p class="quick-setup-step">1) Select categories</p>
+                <div id="wallet-quick-setup-categories" class="quick-setup-categories"></div>
+            </div>
+            <div class="quick-setup-block">
+                <label for="wallet-quick-setup-size-input">2) Number of cards to carry</label>
+                <input id="wallet-quick-setup-size-input" type="number" min="1" step="1" value="4">
+            </div>
+            <div class="quick-setup-block">
+                <p class="quick-setup-step">3) Constraints</p>
+                <label class="quick-setup-check">
+                    <input id="wallet-quick-setup-no-ftf-input" type="checkbox">
+                    <span>Must have no foreign transaction fee</span>
+                </label>
+            </div>
+            <div class="quick-setup-actions">
+                <button id="wallet-quick-setup-build-button" type="button">Build Wallet</button>
+            </div>
+            <div id="wallet-quick-setup-summary" class="quick-setup-summary"></div>
         </div>
     </div>
 

@@ -1,0 +1,56 @@
+[
+  {
+    "key": "cash",
+    "label": "Cash",
+    "type": "Cash Back",
+    "value": 1
+  },
+  {
+    "key": "amex",
+    "label": "Amex",
+    "type": "American Express Membership Rewards",
+    "value": 1.75
+  },
+  {
+    "key": "chase",
+    "label": "Chase",
+    "type": "Chase Ultimate Rewards",
+    "value": 2.15
+  },
+  {
+    "key": "capital1",
+    "label": "Capital1",
+    "type": "Capital One Miles",
+    "value": 1.85
+  },
+  {
+    "key": "wellsfargo",
+    "label": "Wells Fargo",
+    "type": "Wells Fargo Rewards Points",
+    "value": 2.1
+  },
+  {
+    "key": "hyatt",
+    "label": "Hyatt",
+    "type": "World of Hyatt Points",
+    "value": 2.3
+  },
+  {
+    "key": "atmos",
+    "label": "Atmos",
+    "type": "Atmos Rewards",
+    "value": 1.55
+  },
+  {
+    "key": "hilton",
+    "label": "Hilton",
+    "type": "Hilton Honors Points",
+    "value": 0.5
+  },
+  {
+    "key": "citi",
+    "label": "Citi",
+    "type": "Citi Thank You",
+    "value": 1.3
+  }
+]
