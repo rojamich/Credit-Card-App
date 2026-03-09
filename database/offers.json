@@ -1,59 +1,96 @@
 [
   {
-    "id": "fred_meyer_10pct_up_to_5_2026_03_31",
+    "id": "fred_meyer_percent_2026_03_19",
     "merchantKey": "fred_meyer",
     "merchantName": "Fred Meyer",
-    "logo": "",
     "provider": "chase",
-    "expires": "2026-03-31",
-    "startDate": "2026-03-01",
-    "categories": ["groceries", "fuel"],
+    "expires": "2026-03-19",
+    "startDate": "2026-03-09",
+    "categories": [
+      "groceries"
+    ],
     "offerType": "percent",
     "rate": 0.1,
-    "maxDiscount": 5,
+    "maxDiscount": 9,
     "minSpend": 0,
-    "fixedAmount": null,
-    "points": null,
-    "programKey": "cash",
+    "fixedAmount": 0,
+    "points": 0,
+    "programKey": "",
+    "aliases": [],
+    "notes": "",
+    "logo": "https://static2.chasecdn.com/offers/cdlx/logo/1000247201.jpg",
     "attachments": [
       {
         "cardId": "freedom_unlimited",
         "cardInstanceId": "",
-        "note": ""
+        "note": "6936"
       },
       {
-        "cardId": "venture_x",
+        "cardId": "freedom",
+        "cardInstanceId": "",
+        "note": "2990"
+      },
+      {
+        "cardId": "hyatt",
         "cardInstanceId": "",
         "note": ""
       }
-    ],
-    "aliases": ["Fred Meyers", "Kroger Fred Meyer"],
-    "notes": ""
+    ]
   },
   {
-    "id": "delta_amex_mr_1000_after_50_2026_04_15",
-    "merchantKey": "delta",
-    "merchantName": "Delta",
-    "logo": "",
-    "provider": "amex",
-    "expires": "2026-04-15",
-    "startDate": "2026-03-01",
-    "categories": ["airfare", "travel"],
-    "offerType": "points",
-    "rate": null,
-    "maxDiscount": null,
-    "minSpend": 50,
-    "fixedAmount": null,
-    "points": 1000,
-    "programKey": "amex",
+    "id": "lululemon_percent_2026_04_05",
+    "merchantKey": "lululemon",
+    "merchantName": "Lululemon",
+    "provider": "chase",
+    "expires": "2026-04-05",
+    "startDate": "2026-03-09",
+    "categories": [
+      "online_shopping"
+    ],
+    "offerType": "percent",
+    "rate": 0.1,
+    "maxDiscount": 29.98,
+    "minSpend": 0,
+    "fixedAmount": 0,
+    "points": 0,
+    "programKey": "",
+    "aliases": [],
+    "notes": "",
+    "logo": "https://static2.chasecdn.com/offers/figg/logo/1000103849-Lululemon%20-%20Chase-1753908179839-small.png",
     "attachments": [
       {
-        "cardId": "amex_platinum",
+        "cardId": "freedom_unlimited",
         "cardInstanceId": "",
-        "note": ""
+        "note": "6936"
       }
+    ]
+  },
+  {
+    "id": "lyft_percent_2026_03_31",
+    "merchantKey": "lyft",
+    "merchantName": "Lyft",
+    "provider": "chase",
+    "expires": "2026-03-31",
+    "startDate": "2026-03-09",
+    "categories": [
+      "lyft"
     ],
-    "aliases": ["Delta Air Lines"],
-    "notes": ""
+    "offerType": "percent",
+    "rate": 0.1,
+    "maxDiscount": 10,
+    "minSpend": 0,
+    "fixedAmount": 0,
+    "points": 0,
+    "programKey": "",
+    "aliases": [],
+    "notes": "",
+    "logo": "https://static2.chasecdn.com/offers/figg/logo/1000100723-Lyft%20-%20Chase-1760388723747-small.png",
+    "attachments": [
+      {
+        "cardId": "ink_business_preferred",
+        "cardInstanceId": "",
+        "note": "3402"
+      }
+    ]
   }
 ]
