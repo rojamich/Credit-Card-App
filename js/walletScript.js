@@ -29,6 +29,9 @@ const FILTER_ALL = "all";
 const FILTER_WALLET = "wallet";
 const FILTER_FAVORITES = "favorites";
 const FILTER_FAVORITES_WALLET = "favorites_wallet";
+const EASTERN_TIME_ZONE = "America/New_York";
+const CITI_NIGHTS_BONUS_KEY = "citinights_fri_sat_6am_6pm_est";
+const CITI_NIGHTS_POPUP_NOTE = "Citinights nighttime restaurant window active (based on Eastern time).";
 
 const walletState = {
     cardData: [],
@@ -221,6 +224,63 @@ function getWalletPurchasePrice() {
 function setWalletPurchasePrice(value) {
     walletState.prefs.lastWalletPurchasePrice = normalizeWalletPurchasePrice(value);
     saveWalletPrefs();
+}
+
+function getNormalizedWalletCardName(card) {
+    return dsNormalizeBonusKey((card && (card.card || card.name)) || "");
+}
+
+function isCitiNightsCard(card) {
+    if (!card || typeof card !== "object") return false;
+    if (card.id === "citinights") return true;
+    const normalizedName = getNormalizedWalletCardName(card);
+    return normalizedName === "citinights" || normalizedName === "citi_strata_elite_card";
+}
+
+function isCitiNightsRestaurantsWindow(currentMoment = new Date()) {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: EASTERN_TIME_ZONE,
+        hour: "numeric",
+        hour12: false,
+    });
+    const hourPart = formatter.formatToParts(currentMoment).find((part) => part.type === "hour");
+    const hour = Number(hourPart ? hourPart.value : Number.NaN);
+    if (!Number.isFinite(hour)) return false;
+    return hour >= 18 || hour < 6;
+}
+
+function getEffectiveBonusForWalletCategory(card, normalizedBonus, isDefaultOnly) {
+    const bonuses = card && typeof card.bonuses === "object" ? card.bonuses : {};
+    const hasCategoryBonus = !isDefaultOnly && Object.prototype.hasOwnProperty.call(bonuses, normalizedBonus);
+    let appliedBonus = hasCategoryBonus ? bonuses[normalizedBonus] : bonuses.default;
+    let source = hasCategoryBonus ? "category" : "default";
+    let popupNote = "";
+    let isCitiNightsOverrideActive = false;
+
+    if (
+        !isDefaultOnly
+        && normalizedBonus === "restaurants"
+        && isCitiNightsCard(card)
+        && isCitiNightsRestaurantsWindow()
+    ) {
+        const citiNightsBonus = Number(bonuses[CITI_NIGHTS_BONUS_KEY]);
+        if (Number.isFinite(citiNightsBonus)) {
+            appliedBonus = citiNightsBonus;
+            source = "category";
+            popupNote = CITI_NIGHTS_POPUP_NOTE;
+            isCitiNightsOverrideActive = true;
+        }
+    }
+
+    const numericBonus = Number(appliedBonus);
+    if (!Number.isFinite(numericBonus)) return null;
+
+    return {
+        appliedBonus: numericBonus,
+        source,
+        popupNote,
+        isCitiNightsOverrideActive,
+    };
 }
 
 function getLegacyCardKey(card, counts, seen) {
@@ -629,11 +689,8 @@ function showBestCard(bonus, cardData, bankData) {
 
     const relevantCards = getEffectiveCardsForRanking(cardData)
         .map((card) => {
-            const bonuses = card.bonuses || {};
-            const hasCategoryBonus = !isDefaultOnly && Object.prototype.hasOwnProperty.call(bonuses, normalizedBonus);
-            const appliedBonus = hasCategoryBonus ? bonuses[normalizedBonus] : bonuses.default;
-            const numericBonus = Number(appliedBonus);
-            if (!Number.isFinite(numericBonus)) return null;
+            const effectiveBonus = getEffectiveBonusForWalletCategory(card, normalizedBonus, isDefaultOnly);
+            if (!effectiveBonus) return null;
             const bankDetails = getBankDetails(card.bank, bankData);
             return {
                 cardId: card.id,
@@ -641,9 +698,11 @@ function showBestCard(bonus, cardData, bankData) {
                 photoPath: card.photo || card.photoPath || "",
                 network: card.network,
                 tier: card.tier,
-                appliedBonus: numericBonus,
-                weightedValue: numericBonus * bankDetails.multiplier,
-                source: hasCategoryBonus ? "category" : "default",
+                appliedBonus: effectiveBonus.appliedBonus,
+                weightedValue: effectiveBonus.appliedBonus * bankDetails.multiplier,
+                source: effectiveBonus.source,
+                popupNote: effectiveBonus.popupNote,
+                isCitiNightsOverrideActive: effectiveBonus.isCitiNightsOverrideActive,
             };
         })
         .filter(Boolean)
@@ -722,6 +781,13 @@ function showBestCard(bonus, cardData, bankData) {
         stats.appendChild(createStatCard("Purchase Price", `$${purchasePrice.toFixed(2)}`, false));
         stats.appendChild(createStatCard("Reward Value", `$${rewardDollar.toFixed(2)}`, false));
         popupContent.appendChild(stats);
+
+        if (card.popupNote) {
+            const banner = document.createElement("div");
+            banner.className = "wallet-offer-banner";
+            banner.textContent = card.popupNote;
+            popupContent.appendChild(banner);
+        }
 
         const categoryOffers = getActiveOffersForCategory(normalizedBonus).slice(0, 2);
         if (categoryOffers.length) {
