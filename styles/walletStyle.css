@@ -289,6 +289,38 @@ body {
     font-size: 20px;
 }
 
+.popup-effective-hero {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid #cfe0ff;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #f4f8ff 0%, #e6efff 100%);
+}
+
+.popup-effective-label {
+    margin: 0;
+    color: #31558d;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.popup-effective-value {
+    margin: 4px 0 0;
+    color: #14366b;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.popup-explanation {
+    margin: 10px 0 0;
+    color: #35507f;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
 .popup-favorite-button {
     width: 44px;
     height: 44px;
@@ -362,6 +394,37 @@ body {
     padding: 5px 10px;
     font-size: 13px;
     font-weight: 700;
+}
+
+.popup-backup-card {
+    margin-top: 12px;
+    border: 1px solid #d8e2f4;
+    border-radius: 12px;
+    padding: 10px;
+    background: #f7faff;
+}
+
+.popup-backup-title {
+    margin: 0;
+    color: #4a5e86;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.popup-backup-summary {
+    margin: 6px 0 0;
+    color: #1c335f;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.popup-backup-detail {
+    margin: 6px 0 0;
+    color: #35507f;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
 .wallet-offer-banner {

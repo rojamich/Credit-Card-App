@@ -37,10 +37,10 @@
     "network": "visa",
     "tier": "signature",
     "foreignTransactionFee": true,
+    "instances": [],
     "bonuses": {
       "default": 1,
-      "lyft": 5,
-      "restaurants": 5
+      "amazon": 5
     }
   },
   {
@@ -53,6 +53,7 @@
     "network": "amex",
     "tier": "standard",
     "foreignTransactionFee": true,
+    "instances": [],
     "bonuses": {
       "default": 1,
       "groceries": 3,
@@ -70,6 +71,7 @@
     "network": "amex",
     "tier": "standard",
     "foreignTransactionFee": false,
+    "instances": [],
     "bonuses": {
       "default": 1,
       "airfare": 5,
@@ -87,6 +89,7 @@
     "network": "visa",
     "tier": "signature",
     "foreignTransactionFee": true,
+    "instances": [],
     "bonuses": {
       "default": 1,
       "sporting_goods": 5,
@@ -103,6 +106,7 @@
     "network": "visa",
     "tier": "signature",
     "foreignTransactionFee": false,
+    "instances": [],
     "bonuses": {
       "default": 1,
       "airfare": 3,
@@ -125,6 +129,7 @@
     "network": "visa",
     "tier": "infinite",
     "foreignTransactionFee": false,
+    "instances": [],
     "bonuses": {
       "default": 2,
       "foreign_transactions": 2
@@ -141,6 +146,7 @@
     "network": "visa",
     "tier": "signature",
     "foreignTransactionFee": false,
+    "instances": [],
     "bonuses": {
       "default": 1,
       "hyatt": 4,
@@ -163,6 +169,7 @@
     "network": "visa",
     "tier": "signature",
     "foreignTransactionFee": false,
+    "instances": [],
     "bonuses": {
       "default": 1,
       "amazon": 5,
@@ -182,6 +189,7 @@
     "network": "amex",
     "tier": "standard",
     "foreignTransactionFee": false,
+    "instances": [],
     "bonuses": {
       "default": 2,
       "foreign_transactions": 2
@@ -197,6 +205,7 @@
     "network": "visa",
     "tier": "signature",
     "foreignTransactionFee": true,
+    "instances": [],
     "bonuses": {
       "default": 1,
       "evcharging": 4,
@@ -214,6 +223,7 @@
     "network": "amex",
     "tier": "standard",
     "foreignTransactionFee": false,
+    "instances": [],
     "bonuses": {
       "default": 3,
       "airfare": 7,
@@ -233,6 +243,7 @@
     "network": "visa",
     "tier": "signature",
     "foreignTransactionFee": false,
+    "instances": [],
     "bonuses": {
       "default": 1,
       "travel": 3,
@@ -253,6 +264,7 @@
     "network": "visa",
     "tier": "infinite",
     "foreignTransactionFee": false,
+    "instances": [],
     "bonuses": {
       "default": 1,
       "alaska": 3,
@@ -271,6 +283,7 @@
     "network": "amex",
     "tier": "standard",
     "foreignTransactionFee": false,
+    "instances": [],
     "bonuses": {
       "default": 1,
       "electronic_store_software": 4,
@@ -292,6 +305,7 @@
     "network": "mastercard",
     "tier": "world-elite",
     "foreignTransactionFee": false,
+    "instances": [],
     "bonuses": {
       "default": 1.5,
       "cititravel": 6,

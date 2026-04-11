@@ -32,6 +32,7 @@ const FILTER_FAVORITES_WALLET = "favorites_wallet";
 const EASTERN_TIME_ZONE = "America/New_York";
 const CITI_NIGHTS_BONUS_KEY = "citinights_fri_sat_6am_6pm_est";
 const CITI_NIGHTS_POPUP_NOTE = "Citinights nighttime restaurant window active (based on Eastern time).";
+const INTERNAL_WALLET_CATEGORY_KEYS = new Set(["default", CITI_NIGHTS_BONUS_KEY]);
 
 const walletState = {
     cardData: [],
@@ -59,7 +60,7 @@ function createDefaultPrefs() {
     return {
         version: 2,
         activeProfile: PROFILE_MICHAEL,
-        activeFilter: FILTER_ALL,
+        activeFilter: FILTER_WALLET,
         requireNoFtf: false,
         favoritesByCardId: {},
         profiles: {
@@ -200,7 +201,7 @@ function renderLastSync() {
 }
 
 function prettyLabelFromKey(key) {
-    if (key === DEFAULT_ONLY_CATEGORY_KEY) return "Other";
+    if (key === DEFAULT_ONLY_CATEGORY_KEY) return "Everything Else";
     if (typeof dsPrettyLabelFromKey === "function") return dsPrettyLabelFromKey(key);
     const normalized = dsNormalizeBonusKey(key);
     if (!normalized) return "Unknown";
@@ -209,6 +210,31 @@ function prettyLabelFromKey(key) {
         .filter(Boolean)
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
         .join(" ");
+}
+
+function isWalletVisibleCategory(categoryKey) {
+    if (categoryKey === DEFAULT_ONLY_CATEGORY_KEY) return true;
+    const normalized = dsNormalizeBonusKey(categoryKey);
+    if (!normalized) return false;
+    if (INTERNAL_WALLET_CATEGORY_KEYS.has(normalized)) return false;
+    if (normalized.startsWith("__")) return false;
+    return true;
+}
+
+function getWalletVisibleCategories(categories) {
+    return categories.filter((categoryKey) => isWalletVisibleCategory(categoryKey));
+}
+
+function getWalletCategoryLabel(categoryKey) {
+    return prettyLabelFromKey(categoryKey);
+}
+
+function getWalletCategoryIconPath(categoryKey) {
+    if (categoryKey === DEFAULT_ONLY_CATEGORY_KEY) return "./logo/cardBonusesIcons/default-icon.png";
+    const normalized = dsNormalizeBonusKey(categoryKey);
+    return normalized
+        ? `./logo/cardBonusesIcons/${normalized}-icon.png`
+        : "./logo/cardBonusesIcons/default-icon.png";
 }
 
 function normalizeWalletPurchasePrice(value) {
@@ -281,6 +307,25 @@ function getEffectiveBonusForWalletCategory(card, normalizedBonus, isDefaultOnly
         popupNote,
         isCitiNightsOverrideActive,
     };
+}
+
+function formatBankProgramValue(bankDetails) {
+    const label = String(bankDetails.label || bankDetails.type || "Bank").trim();
+    return `${bankDetails.multiplier.toFixed(2)}\u00a2 ${label} value`;
+}
+
+function buildWalletExplanationLine(card, categoryLabel) {
+    const spendLabel = card.source === "default" ? "default spend" : categoryLabel;
+    return `${card.appliedBonus.toFixed(1)}x ${spendLabel} x ${formatBankProgramValue(card.bankDetails)} = ${card.weightedValue.toFixed(2)}% effective reward`;
+}
+
+function buildBackupCardSummary(card) {
+    if (!card) return "";
+    return `${card.cardName} - ${card.weightedValue.toFixed(2)}% effective`;
+}
+
+function getFtfStatusLabel(card) {
+    return card.foreignTransactionFee === false ? "No FTF" : "Has FTF";
 }
 
 function getLegacyCardKey(card, counts, seen) {
@@ -438,6 +483,7 @@ function isPinnedCategory(categoryKey) {
 }
 
 function togglePinnedCategory(categoryKey) {
+    if (categoryKey === DEFAULT_ONLY_CATEGORY_KEY) return;
     const profileKey = walletState.prefs.activeProfile;
     if (profileKey === PROFILE_BOTH) return;
     const current = new Set(getPinnedForProfile(profileKey));
@@ -469,13 +515,13 @@ function formatNetworkTier(networkRaw, tierRaw) {
 
 function getAllCategoriesFromCards(cardData) {
     if (typeof dsGetCategoryDefsFromCards === "function") {
-        return dsGetCategoryDefsFromCards(cardData).map((item) => item.key);
+        return getWalletVisibleCategories(dsGetCategoryDefsFromCards(cardData).map((item) => item.key));
     }
     const categorySet = new Set();
     cardData.forEach((card) => {
         Object.keys(card.bonuses || {}).forEach((bonusKey) => {
             const normalized = dsNormalizeBonusKey(bonusKey);
-            if (!normalized || normalized === "default") return;
+            if (!isWalletVisibleCategory(normalized)) return;
             categorySet.add(normalized);
         });
     });
@@ -483,7 +529,7 @@ function getAllCategoriesFromCards(cardData) {
 }
 
 function sortBonuses(bonuses) {
-    return bonuses.slice().sort((a, b) => prettyLabelFromKey(a).localeCompare(prettyLabelFromKey(b)));
+    return bonuses.slice().sort((a, b) => getWalletCategoryLabel(a).localeCompare(getWalletCategoryLabel(b)));
 }
 
 function getBankDetails(bankName, bankData) {
@@ -492,10 +538,15 @@ function getBankDetails(bankName, bankData) {
     if (matchedBank) {
         return {
             multiplier: dsGetBankValue(matchedBank.key),
+            label: matchedBank.label || prettyLabelFromKey(matchedBank.key),
             type: matchedBank.type,
         };
     }
-    return { multiplier: dsGetBankValue(bankName), type: "Cash Back" };
+    return {
+        multiplier: dsGetBankValue(bankName),
+        label: prettyLabelFromKey(dsNormalizeBankKey(bankName) || bankName),
+        type: "Cash Back",
+    };
 }
 
 function cardPassesFilters(card) {
@@ -540,7 +591,7 @@ function renderProfileUi() {
 
 function renderFavoriteCategories() {
     if (!favoriteCategoriesGrid || !favoriteCategoriesEmpty) return;
-    const pinned = getPinnedForActiveProfile();
+    const pinned = getPinnedForActiveProfile().filter((categoryKey) => isWalletVisibleCategory(categoryKey));
     favoriteCategoriesGrid.innerHTML = "";
     favoriteCategoriesEmpty.classList.toggle("hidden", pinned.length > 0);
 
@@ -552,12 +603,12 @@ function renderFavoriteCategories() {
 
         const icon = document.createElement("img");
         icon.className = "favorite-category-icon";
-        icon.src = `./logo/cardBonusesIcons/${categoryKey}-icon.png`;
+        icon.src = getWalletCategoryIconPath(categoryKey);
         icon.alt = "";
         icon.onerror = () => { icon.src = "./logo/cardBonusesIcons/default-icon.png"; };
 
         const label = document.createElement("span");
-        label.textContent = prettyLabelFromKey(categoryKey);
+        label.textContent = getWalletCategoryLabel(categoryKey);
 
         button.appendChild(icon);
         button.appendChild(label);
@@ -574,12 +625,12 @@ function updateBonusSelectionHighlight(selectedCategoryKey) {
 function renderBonuses(categories) {
     if (!bonusContainer) return;
     bonusContainer.innerHTML = "";
-    const activePins = new Set(getPinnedForActiveProfile());
+    const activePins = new Set(getPinnedForActiveProfile().filter((categoryKey) => isWalletVisibleCategory(categoryKey)));
     const canEditPins = walletState.prefs.activeProfile !== PROFILE_BOTH;
 
     categories.forEach((bonus) => {
-        const normalizedBonus = dsNormalizeBonusKey(bonus);
-        if (!normalizedBonus) return;
+        const normalizedBonus = bonus === DEFAULT_ONLY_CATEGORY_KEY ? DEFAULT_ONLY_CATEGORY_KEY : dsNormalizeBonusKey(bonus);
+        if (!isWalletVisibleCategory(normalizedBonus)) return;
 
         const box = document.createElement("div");
         box.className = "bonus-box";
@@ -591,22 +642,24 @@ function renderBonuses(categories) {
         pinButton.className = "bonus-pin";
         pinButton.dataset.action = "toggle-pin";
         pinButton.dataset.category = normalizedBonus;
-        pinButton.disabled = !canEditPins;
+        pinButton.disabled = !canEditPins || normalizedBonus === DEFAULT_ONLY_CATEGORY_KEY;
         pinButton.setAttribute("aria-pressed", activePins.has(normalizedBonus) ? "true" : "false");
-        pinButton.title = canEditPins ? "Pin category shortcut" : "Switch to Michael or Jenna to edit pins";
+        pinButton.title = normalizedBonus === DEFAULT_ONLY_CATEGORY_KEY
+            ? "Everything Else cannot be pinned"
+            : (canEditPins ? "Pin category shortcut" : "Switch to Michael or Jenna to edit pins");
         pinButton.textContent = activePins.has(normalizedBonus) ? "\u2605" : "\u2606";
 
         const logo = document.createElement("img");
         logo.className = "bonus-logo";
-        logo.src = `./logo/cardBonusesIcons/${normalizedBonus}-icon.png`;
-        logo.alt = `${prettyLabelFromKey(normalizedBonus)} icon`;
+        logo.src = getWalletCategoryIconPath(normalizedBonus);
+        logo.alt = `${getWalletCategoryLabel(normalizedBonus)} icon`;
         logo.onerror = () => { logo.src = "./logo/cardBonusesIcons/default-icon.png"; };
 
         const name = document.createElement("span");
         name.className = "bonus-name";
-        name.textContent = prettyLabelFromKey(normalizedBonus);
+        name.textContent = getWalletCategoryLabel(normalizedBonus);
 
-        const hasOffers = getActiveOffersForCategory(normalizedBonus).length > 0;
+        const hasOffers = normalizedBonus !== DEFAULT_ONLY_CATEGORY_KEY && getActiveOffersForCategory(normalizedBonus).length > 0;
         if (hasOffers) {
             const alert = document.createElement("span");
             alert.className = "bonus-offer-alert";
@@ -698,8 +751,10 @@ function showBestCard(bonus, cardData, bankData) {
                 photoPath: card.photo || card.photoPath || "",
                 network: card.network,
                 tier: card.tier,
+                foreignTransactionFee: card.foreignTransactionFee,
                 appliedBonus: effectiveBonus.appliedBonus,
                 weightedValue: effectiveBonus.appliedBonus * bankDetails.multiplier,
+                bankDetails,
                 source: effectiveBonus.source,
                 popupNote: effectiveBonus.popupNote,
                 isCitiNightsOverrideActive: effectiveBonus.isCitiNightsOverrideActive,
@@ -740,9 +795,10 @@ function showBestCard(bonus, cardData, bankData) {
 
     const updatePopupContent = () => {
         const card = relevantCards[currentIndex];
-        const categoryLabel = isDefaultOnly ? "Other" : prettyLabelFromKey(normalizedBonus);
+        const categoryLabel = getWalletCategoryLabel(isDefaultOnly ? DEFAULT_ONLY_CATEGORY_KEY : normalizedBonus);
         const purchasePrice = getWalletPurchasePrice();
         const rewardDollar = computeWalletRewardDollar(card.weightedValue, purchasePrice);
+        const backupCard = currentIndex === 0 ? relevantCards[1] : null;
         popupContent.innerHTML = "";
 
         const image = document.createElement("img");
@@ -752,6 +808,23 @@ function showBestCard(bonus, cardData, bankData) {
         image.onerror = () => { image.src = "./logo/cardBonusesIcons/default-icon.png"; };
         popupContent.appendChild(image);
         renderPopupHeader(popupContent, card.cardName, card.cardId);
+
+        const effectiveHero = document.createElement("div");
+        effectiveHero.className = "popup-effective-hero";
+        const effectiveLabel = document.createElement("p");
+        effectiveLabel.className = "popup-effective-label";
+        effectiveLabel.textContent = currentIndex === 0 ? `Best for ${categoryLabel}` : `Ranked for ${categoryLabel}`;
+        const effectiveValue = document.createElement("p");
+        effectiveValue.className = "popup-effective-value";
+        effectiveValue.textContent = `${card.weightedValue.toFixed(2)}% effective reward`;
+        effectiveHero.appendChild(effectiveLabel);
+        effectiveHero.appendChild(effectiveValue);
+        popupContent.appendChild(effectiveHero);
+
+        const explanation = document.createElement("p");
+        explanation.className = "popup-explanation";
+        explanation.textContent = buildWalletExplanationLine(card, categoryLabel);
+        popupContent.appendChild(explanation);
 
         const purchaseWrap = document.createElement("label");
         purchaseWrap.className = "popup-purchase-wrap";
@@ -777,10 +850,28 @@ function showBestCard(bonus, cardData, bankData) {
         stats.appendChild(createStatCard("Rank", `#${currentIndex + 1} of ${relevantCards.length}`, false));
         stats.appendChild(createStatCard("Network Tier", formatNetworkTier(card.network, card.tier), true));
         stats.appendChild(createStatCard("Bonus", `${card.appliedBonus.toFixed(1)}x ${categoryLabel}`, false));
-        stats.appendChild(createStatCard("Effective Reward", `${card.weightedValue.toFixed(2)}%`, false));
         stats.appendChild(createStatCard("Purchase Price", `$${purchasePrice.toFixed(2)}`, false));
         stats.appendChild(createStatCard("Reward Value", `$${rewardDollar.toFixed(2)}`, false));
+        stats.appendChild(createStatCard("FTF Status", getFtfStatusLabel(card), true));
         popupContent.appendChild(stats);
+
+        if (backupCard) {
+            const backup = document.createElement("div");
+            backup.className = "popup-backup-card";
+            const backupTitle = document.createElement("p");
+            backupTitle.className = "popup-backup-title";
+            backupTitle.textContent = "Backup card";
+            const backupSummary = document.createElement("p");
+            backupSummary.className = "popup-backup-summary";
+            backupSummary.textContent = buildBackupCardSummary(backupCard);
+            const backupDetail = document.createElement("p");
+            backupDetail.className = "popup-backup-detail";
+            backupDetail.textContent = buildWalletExplanationLine(backupCard, categoryLabel);
+            backup.appendChild(backupTitle);
+            backup.appendChild(backupSummary);
+            backup.appendChild(backupDetail);
+            popupContent.appendChild(backup);
+        }
 
         if (card.popupNote) {
             const banner = document.createElement("div");
@@ -877,11 +968,11 @@ async function loadWalletData() {
 }
 
 function refreshWalletUi() {
-    const allCategories = getAllCategoriesFromCards(walletState.cardData);
+    const allCategories = sortBonuses(getAllCategoriesFromCards(walletState.cardData));
     walletState.categories = [...allCategories, DEFAULT_ONLY_CATEGORY_KEY];
     renderProfileUi();
     renderFavoriteCategories();
-    renderBonuses(sortBonuses(allCategories));
+    renderBonuses([...allCategories, DEFAULT_ONLY_CATEGORY_KEY]);
     if (walletState.selectedCategoryKey && !walletState.categories.includes(walletState.selectedCategoryKey)) {
         walletState.selectedCategoryKey = null;
     }
