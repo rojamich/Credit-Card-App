@@ -18,8 +18,13 @@ const {
     normalizeOffersForRuntime: dsNormalizeOffersForRuntime,
     getBankValue: dsGetBankValue,
 } = window.CCDataStore;
+const {
+    STORAGE_KEY: personalStateStorageKey,
+    loadPersonalState: psLoadPersonalState,
+    savePersonalState: psSavePersonalState,
+    normalizePersonalState: psNormalizePersonalState,
+} = window.CCPersonalStateStore;
 
-const WALLET_PREFS_STORAGE_KEY = "walletAppPrefs";
 const LAST_SYNC_STORAGE_KEY = "wallet.lastSync";
 const DEFAULT_ONLY_CATEGORY_KEY = "__default__";
 const PROFILE_MICHAEL = "michael";
@@ -56,31 +61,6 @@ const controlsMessageEl = document.getElementById("wallet-controls-message");
 const lastSyncEl = document.getElementById("wallet-last-sync");
 const bonusContainer = document.getElementById("bonus-container");
 
-function createDefaultPrefs() {
-    return {
-        version: 2,
-        activeProfile: PROFILE_MICHAEL,
-        activeFilter: FILTER_WALLET,
-        requireNoFtf: false,
-        favoritesByCardId: {},
-        profiles: {
-            michael: { walletCardIds: [] },
-            jenna: { walletCardIds: [] },
-        },
-        pinnedCategoriesByProfile: {
-            michael: [],
-            jenna: [],
-        },
-        usedOfferAttachmentsByProfile: {
-            michael: {},
-            jenna: {},
-        },
-        offerPublishQueue: [],
-        lastOfferSpend: 50,
-        lastWalletPurchasePrice: 50,
-    };
-}
-
 function asStringArray(value) {
     if (!Array.isArray(value)) return [];
     return value.map((item) => String(item || "").trim()).filter(Boolean);
@@ -92,94 +72,15 @@ function asCategoryArray(value) {
         .filter((item) => item && item !== "default");
 }
 
-function normalizePrefsStructure(rawPrefs) {
-    const defaults = createDefaultPrefs();
-    const source = rawPrefs && typeof rawPrefs === "object" ? rawPrefs : {};
-    const sourceProfiles = source.profiles && typeof source.profiles === "object" ? source.profiles : {};
-    const sourcePins = source.pinnedCategoriesByProfile && typeof source.pinnedCategoriesByProfile === "object"
-        ? source.pinnedCategoriesByProfile
-        : {};
-    const sourceUsed = source.usedOfferAttachmentsByProfile && typeof source.usedOfferAttachmentsByProfile === "object"
-        ? source.usedOfferAttachmentsByProfile
-        : {};
-    const fromV2Favorites = source.favoritesByCardId && typeof source.favoritesByCardId === "object"
-        ? source.favoritesByCardId
-        : {};
-    const fromV1Favorites = source.favoritesByCardKey && typeof source.favoritesByCardKey === "object"
-        ? source.favoritesByCardKey
-        : {};
-
-    const mergedFavorites = {};
-    Object.keys(fromV2Favorites).forEach((cardId) => {
-        if (fromV2Favorites[cardId]) mergedFavorites[String(cardId)] = true;
-    });
-    Object.keys(fromV1Favorites).forEach((legacyKey) => {
-        if (fromV1Favorites[legacyKey]) mergedFavorites[String(legacyKey)] = true;
-    });
-
-    const normalized = {
-        version: 2,
-        activeProfile: [PROFILE_MICHAEL, PROFILE_JENNA, PROFILE_BOTH].includes(source.activeProfile)
-            ? source.activeProfile
-            : defaults.activeProfile,
-        activeFilter: [FILTER_ALL, FILTER_WALLET, FILTER_FAVORITES, FILTER_FAVORITES_WALLET].includes(source.activeFilter)
-            ? source.activeFilter
-            : defaults.activeFilter,
-        requireNoFtf: Boolean(source.requireNoFtf),
-        favoritesByCardId: mergedFavorites,
-        profiles: {
-            michael: {
-                walletCardIds: [
-                    ...asStringArray(sourceProfiles.michael && sourceProfiles.michael.walletCardIds),
-                    ...asStringArray(sourceProfiles.michael && sourceProfiles.michael.walletCardKeys),
-                ],
-            },
-            jenna: {
-                walletCardIds: [
-                    ...asStringArray(sourceProfiles.jenna && sourceProfiles.jenna.walletCardIds),
-                    ...asStringArray(sourceProfiles.jenna && sourceProfiles.jenna.walletCardKeys),
-                ],
-            },
-        },
-        pinnedCategoriesByProfile: {
-            michael: asCategoryArray(sourcePins.michael),
-            jenna: asCategoryArray(sourcePins.jenna),
-        },
-        usedOfferAttachmentsByProfile: {
-            michael: sourceUsed.michael && typeof sourceUsed.michael === "object" ? sourceUsed.michael : {},
-            jenna: sourceUsed.jenna && typeof sourceUsed.jenna === "object" ? sourceUsed.jenna : {},
-        },
-        offerPublishQueue: Array.isArray(source.offerPublishQueue) ? source.offerPublishQueue : [],
-        lastOfferSpend: Number.isFinite(Number(source.lastOfferSpend)) ? Number(source.lastOfferSpend) : defaults.lastOfferSpend,
-        lastWalletPurchasePrice: Number.isFinite(Number(source.lastWalletPurchasePrice))
-            ? Number(source.lastWalletPurchasePrice)
-            : defaults.lastWalletPurchasePrice,
-    };
-
-    return normalized;
-}
-
-function loadWalletPrefs() {
-    try {
-        const raw = localStorage.getItem(WALLET_PREFS_STORAGE_KEY);
-        if (!raw) {
-            walletState.isFreshPrefs = true;
-            return createDefaultPrefs();
-        }
-        walletState.isFreshPrefs = false;
-        return normalizePrefsStructure(JSON.parse(raw));
-    } catch (error) {
-        walletState.isFreshPrefs = true;
-        return createDefaultPrefs();
-    }
-}
-
 function saveWalletPrefs() {
-    try {
-        localStorage.setItem(WALLET_PREFS_STORAGE_KEY, JSON.stringify(walletState.prefs));
-    } catch (error) {
-        // Ignore storage write failures.
-    }
+    walletState.prefs = psNormalizePersonalState(walletState.prefs);
+    void psSavePersonalState(walletState.prefs, { updatedBy: "wallet" })
+        .then(({ state }) => {
+            walletState.prefs = state;
+        })
+        .catch(() => {
+            // Local cache already updated inside the personal-state store.
+        });
 }
 
 function setControlsMessage(message, isError) {
@@ -317,11 +218,6 @@ function formatBankProgramValue(bankDetails) {
 function buildWalletExplanationLine(card, categoryLabel) {
     const spendLabel = card.source === "default" ? "default spend" : categoryLabel;
     return `${card.appliedBonus.toFixed(1)}x ${spendLabel} x ${formatBankProgramValue(card.bankDetails)} = ${card.weightedValue.toFixed(2)}% effective reward`;
-}
-
-function buildBackupCardSummary(card) {
-    if (!card) return "";
-    return `${card.cardName} - ${card.weightedValue.toFixed(2)}% effective`;
 }
 
 function getFtfStatusLabel(card) {
@@ -798,7 +694,6 @@ function showBestCard(bonus, cardData, bankData) {
         const categoryLabel = getWalletCategoryLabel(isDefaultOnly ? DEFAULT_ONLY_CATEGORY_KEY : normalizedBonus);
         const purchasePrice = getWalletPurchasePrice();
         const rewardDollar = computeWalletRewardDollar(card.weightedValue, purchasePrice);
-        const backupCard = currentIndex === 0 ? relevantCards[1] : null;
         popupContent.innerHTML = "";
 
         const image = document.createElement("img");
@@ -854,24 +749,6 @@ function showBestCard(bonus, cardData, bankData) {
         stats.appendChild(createStatCard("Reward Value", `$${rewardDollar.toFixed(2)}`, false));
         stats.appendChild(createStatCard("FTF Status", getFtfStatusLabel(card), true));
         popupContent.appendChild(stats);
-
-        if (backupCard) {
-            const backup = document.createElement("div");
-            backup.className = "popup-backup-card";
-            const backupTitle = document.createElement("p");
-            backupTitle.className = "popup-backup-title";
-            backupTitle.textContent = "Backup card";
-            const backupSummary = document.createElement("p");
-            backupSummary.className = "popup-backup-summary";
-            backupSummary.textContent = buildBackupCardSummary(backupCard);
-            const backupDetail = document.createElement("p");
-            backupDetail.className = "popup-backup-detail";
-            backupDetail.textContent = buildWalletExplanationLine(backupCard, categoryLabel);
-            backup.appendChild(backupTitle);
-            backup.appendChild(backupSummary);
-            backup.appendChild(backupDetail);
-            popupContent.appendChild(backup);
-        }
 
         if (card.popupNote) {
             const banner = document.createElement("div");
@@ -1032,7 +909,7 @@ function resetLocalWalletData() {
         cardsStorageKey,
         banksStorageKey,
         LAST_SYNC_STORAGE_KEY,
-        WALLET_PREFS_STORAGE_KEY,
+        personalStateStorageKey,
         "wallet.favoriteCategories",
         "wallet.onlyInWalletCards",
     ].forEach((key) => localStorage.removeItem(key));
@@ -1108,7 +985,9 @@ function attachWalletControlEvents() {
 
 async function initWallet() {
     try {
-        walletState.prefs = loadWalletPrefs();
+        const personalStateResult = await psLoadPersonalState();
+        walletState.prefs = personalStateResult.state;
+        walletState.isFreshPrefs = !personalStateResult.localExists && !personalStateResult.remoteExists;
         renderLastSync();
         await loadWalletData();
         migratePrefsCardRefs();

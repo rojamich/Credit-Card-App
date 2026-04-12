@@ -262,6 +262,8 @@ body {
 .popup-content {
     width: 100%;
     max-width: 420px;
+    max-height: min(88vh, 760px);
+    overflow-y: auto;
     background: #ffffff;
     border: 1px solid #d6e2f8;
     border-radius: 16px;
@@ -396,37 +398,6 @@ body {
     font-weight: 700;
 }
 
-.popup-backup-card {
-    margin-top: 12px;
-    border: 1px solid #d8e2f4;
-    border-radius: 12px;
-    padding: 10px;
-    background: #f7faff;
-}
-
-.popup-backup-title {
-    margin: 0;
-    color: #4a5e86;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-
-.popup-backup-summary {
-    margin: 6px 0 0;
-    color: #1c335f;
-    font-size: 16px;
-    font-weight: 700;
-}
-
-.popup-backup-detail {
-    margin: 6px 0 0;
-    color: #35507f;
-    font-size: 13px;
-    line-height: 1.4;
-}
-
 .wallet-offer-banner {
     margin-top: 10px;
     border: 1px solid #f0cf6e;
@@ -512,9 +483,71 @@ body {
 
     .popup-content {
         max-width: 100%;
+        max-height: calc(100vh - 24px);
+        border-radius: 14px;
+        padding: 12px;
+    }
+
+    .popup-card-image {
+        height: 150px;
+    }
+
+    .popup-head {
+        margin-top: 10px;
+    }
+
+    .popup-title {
+        font-size: 18px;
+    }
+
+    .popup-effective-hero {
+        margin-top: 10px;
+        padding: 10px;
+    }
+
+    .popup-effective-value {
+        font-size: 24px;
+    }
+
+    .popup-explanation,
+    .popup-purchase-wrap,
+    .popup-stats-grid,
+    .wallet-offer-banner,
+    .popup-buttons {
+        margin-top: 10px;
+    }
+
+    .popup-stat {
+        padding: 9px;
+    }
+
+    .popup-stat-value {
+        font-size: 15px;
     }
 
     .popup-buttons button {
         flex: 1 1 120px;
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 420px) {
+    .popup {
+        padding: 10px;
+        align-items: flex-end;
+    }
+
+    .popup-content {
+        max-height: calc(100vh - 18px);
+        padding: 10px;
+    }
+
+    .popup-card-image {
+        height: 132px;
+    }
+
+    .popup-stats-grid {
+        gap: 7px;
     }
 }

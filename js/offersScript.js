@@ -18,8 +18,12 @@ const {
     CATEGORY_DEFS: dsCategoryDefs,
     getCategoryDefsFromCards: dsGetCategoryDefsFromCards,
 } = window.CCDataStore;
+const {
+    loadPersonalState: psLoadPersonalState,
+    savePersonalState: psSavePersonalState,
+    normalizePersonalState: psNormalizePersonalState,
+} = window.CCPersonalStateStore;
 
-const WALLET_PREFS_STORAGE_KEY = "walletAppPrefs";
 const OFFERS_EDITOR_STORAGE_KEY = "offersData";
 const PROFILE_MICHAEL = "michael";
 const PROFILE_JENNA = "jenna";
@@ -99,82 +103,15 @@ const offerNotesInput = document.getElementById("offer-notes-input");
 const offerAttachmentsInput = document.getElementById("offer-attachments-input");
 const offerAddAttachmentButton = document.getElementById("offer-add-attachment-button");
 
-function createDefaultPrefs() {
-    return {
-        version: 2,
-        activeProfile: PROFILE_MICHAEL,
-        activeFilter: "all",
-        requireNoFtf: false,
-        favoritesByCardId: {},
-        profiles: {
-            michael: { walletCardIds: [] },
-            jenna: { walletCardIds: [] },
-        },
-        pinnedCategoriesByProfile: { michael: [], jenna: [] },
-        usedOfferAttachmentsByProfile: { michael: {}, jenna: {} },
-        offerPublishQueue: [],
-        lastOfferSpend: 50,
-    };
-}
-
-function normalizeUsedMap(raw) {
-    if (!raw || typeof raw !== "object") return {};
-    const normalized = {};
-    Object.entries(raw).forEach(([key, value]) => {
-        if (!value) return;
-        if (value === true) {
-            normalized[key] = { used: true, usedAt: "" };
-            return;
-        }
-        if (typeof value === "object" && value.used) {
-            normalized[key] = { used: true, usedAt: String(value.usedAt || "") };
-        }
-    });
-    return normalized;
-}
-
-function normalizePublishQueue(rawQueue) {
-    if (!Array.isArray(rawQueue)) return [];
-    const dedupe = new Set();
-    const list = [];
-    rawQueue.forEach((item) => {
-        if (!item || typeof item !== "object") return;
-        const offerId = String(item.offerId || "").trim();
-        const cardId = String(item.cardId || "").trim();
-        const cardInstanceIdOrNull = item.cardInstanceIdOrNull ? String(item.cardInstanceIdOrNull).trim() : null;
-        const profile = [PROFILE_MICHAEL, PROFILE_JENNA].includes(item.profile) ? item.profile : PROFILE_MICHAEL;
-        if (!offerId || !cardId) return;
-        const key = `${offerId}|${cardId}|${cardInstanceIdOrNull || ""}`;
-        if (dedupe.has(key)) return;
-        dedupe.add(key);
-        list.push({ offerId, cardId, cardInstanceIdOrNull, profile, usedAt: String(item.usedAt || "") });
-    });
-    return list;
-}
-
-function loadPrefs() {
-    try {
-        const raw = localStorage.getItem(WALLET_PREFS_STORAGE_KEY);
-        if (!raw) return createDefaultPrefs();
-        const parsed = JSON.parse(raw);
-        const defaults = createDefaultPrefs();
-        return {
-            ...defaults,
-            ...parsed,
-            usedOfferAttachmentsByProfile: {
-                michael: normalizeUsedMap(parsed.usedOfferAttachmentsByProfile && parsed.usedOfferAttachmentsByProfile.michael),
-                jenna: normalizeUsedMap(parsed.usedOfferAttachmentsByProfile && parsed.usedOfferAttachmentsByProfile.jenna),
-            },
-            offerPublishQueue: normalizePublishQueue(parsed.offerPublishQueue),
-            lastOfferSpend: Number.isFinite(Number(parsed.lastOfferSpend)) ? Number(parsed.lastOfferSpend) : defaults.lastOfferSpend,
-        };
-    } catch (error) {
-        return createDefaultPrefs();
-    }
-}
-
 function savePrefs() {
-    localStorage.setItem(WALLET_PREFS_STORAGE_KEY, JSON.stringify(state.prefs));
+    state.prefs = psNormalizePersonalState(state.prefs);
+    void psSavePersonalState(state.prefs, { updatedBy: "offers" })
+        .then(({ state: savedState }) => {
+            state.prefs = savedState;
+        })
+        .catch(() => {
+            // Local cache already updated inside the personal-state store.
+        });
 }
 
 function setAdminMessage(message, isError) {
@@ -345,7 +282,6 @@ function renderOfferPopupResults() {
     if (!offer) return;
     const spend = readSpendInput();
     state.prefs.lastOfferSpend = spend;
-    savePrefs();
     const profile = profileSelect.value;
 
     const rows = [];
@@ -984,17 +920,18 @@ function renderAllOffersViews() {
 }
 
 async function loadData() {
-    const [rawCards, rawBanks, rawOffers] = await Promise.all([
+    const [rawCards, rawBanks, rawOffers, personalStateResult] = await Promise.all([
         dsLoadDataset(cardsStorageKey, "./database/cards.json"),
         dsLoadDataset(banksStorageKey, "./database/banks.json"),
         loadOffersForEditor(),
+        psLoadPersonalState(),
     ]);
     state.cards = dsNormalizeCardsForRuntime(rawCards);
     state.banks = dsNormalizeBanksForRuntime(rawBanks);
     const normalizedOffers = dsNormalizeOffersForRuntime(rawOffers);
     const validation = validateOffersWithRelations(normalizedOffers);
     state.offers = validation.ok ? validation.data : normalizedOffers;
-    state.prefs = loadPrefs();
+    state.prefs = personalStateResult.state;
 }
 function bindEvents() {
     [searchInput, statusSelect, providerSelect].forEach((element) => {
@@ -1025,6 +962,10 @@ function bindEvents() {
     });
 
     popupSpend.addEventListener("input", renderOfferPopupResults);
+    popupSpend.addEventListener("change", () => {
+        state.prefs.lastOfferSpend = readSpendInput();
+        savePrefs();
+    });
     function onPopupAction(event) {
         const button = event.target.closest("button[data-attachment-key]");
         if (!button || !state.activeOffer) return;
