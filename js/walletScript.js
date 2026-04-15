@@ -167,13 +167,20 @@ function isCitiNightsCard(card) {
 function isCitiNightsRestaurantsWindow(currentMoment = new Date()) {
     const formatter = new Intl.DateTimeFormat("en-US", {
         timeZone: EASTERN_TIME_ZONE,
+        weekday: "long",
         hour: "numeric",
         hour12: false,
     });
-    const hourPart = formatter.formatToParts(currentMoment).find((part) => part.type === "hour");
+    const parts = formatter.formatToParts(currentMoment);
+    const weekdayPart = parts.find((part) => part.type === "weekday");
+    const hourPart = parts.find((part) => part.type === "hour");
+    const weekday = weekdayPart ? weekdayPart.value : "";
     const hour = Number(hourPart ? hourPart.value : Number.NaN);
-    if (!Number.isFinite(hour)) return false;
-    return hour >= 18 || hour < 6;
+    if (!weekday || !Number.isFinite(hour)) return false;
+    if (weekday === "Friday") return hour >= 18;
+    if (weekday === "Saturday") return hour < 6 || hour >= 18;
+    if (weekday === "Sunday") return hour < 6;
+    return false;
 }
 
 function getEffectiveBonusForWalletCategory(card, normalizedBonus, isDefaultOnly) {
@@ -208,16 +215,6 @@ function getEffectiveBonusForWalletCategory(card, normalizedBonus, isDefaultOnly
         popupNote,
         isCitiNightsOverrideActive,
     };
-}
-
-function formatBankProgramValue(bankDetails) {
-    const label = String(bankDetails.label || bankDetails.type || "Bank").trim();
-    return `${bankDetails.multiplier.toFixed(2)}\u00a2 ${label} value`;
-}
-
-function buildWalletExplanationLine(card, categoryLabel) {
-    const spendLabel = card.source === "default" ? "default spend" : categoryLabel;
-    return `${card.appliedBonus.toFixed(1)}x ${spendLabel} x ${formatBankProgramValue(card.bankDetails)} = ${card.weightedValue.toFixed(2)}% effective reward`;
 }
 
 function getFtfStatusLabel(card) {
@@ -696,12 +693,15 @@ function showBestCard(bonus, cardData, bankData) {
         const rewardDollar = computeWalletRewardDollar(card.weightedValue, purchasePrice);
         popupContent.innerHTML = "";
 
+        const imageWrap = document.createElement("div");
+        imageWrap.className = "popup-card-image-wrap";
         const image = document.createElement("img");
         image.className = "popup-card-image";
         image.src = card.photoPath || "./logo/cardBonusesIcons/default-icon.png";
         image.alt = card.cardName;
         image.onerror = () => { image.src = "./logo/cardBonusesIcons/default-icon.png"; };
-        popupContent.appendChild(image);
+        imageWrap.appendChild(image);
+        popupContent.appendChild(imageWrap);
         renderPopupHeader(popupContent, card.cardName, card.cardId);
 
         const effectiveHero = document.createElement("div");
@@ -715,11 +715,6 @@ function showBestCard(bonus, cardData, bankData) {
         effectiveHero.appendChild(effectiveLabel);
         effectiveHero.appendChild(effectiveValue);
         popupContent.appendChild(effectiveHero);
-
-        const explanation = document.createElement("p");
-        explanation.className = "popup-explanation";
-        explanation.textContent = buildWalletExplanationLine(card, categoryLabel);
-        popupContent.appendChild(explanation);
 
         const purchaseWrap = document.createElement("label");
         purchaseWrap.className = "popup-purchase-wrap";
