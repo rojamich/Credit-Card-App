@@ -1,4 +1,4 @@
-const CACHE_NAME = "walletapp-v10";
+const CACHE_NAME = "walletapp-v1.2";
 
 const CORE_ASSETS = [
     "./",
